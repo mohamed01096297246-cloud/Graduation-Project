@@ -1,16 +1,6 @@
 const Student = require("../models/Student");
 
-// Add new student
-exports.addStudent = async (req, res) => {
-  try {
-    const student = await Student.create(req.body);
-    res.status(201).json({ message: "Student added", student });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// Get all students
+// داله تجيب لنا كل الطلاب 
 exports.getStudents = async (req, res) => {
   try {
     const students = await Student.find().populate("parent");
@@ -20,7 +10,7 @@ exports.getStudents = async (req, res) => {
   }
 };
 
-// Get single student
+// داله بتجيب طالب واحد 
 exports.getStudent = async (req, res) => {
   try {
     const student = await Student.findById(req.params.id).populate("parent");

@@ -1,7 +1,11 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
+
+// Routes
 const studentRoutes = require("./src/routes/studentRoutes");
+const adminRoutes = require("./src/routes/adminRoutes");  
+  
 
 const app = express();
 
@@ -9,8 +13,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// Routes
+// Main Routes
 app.use("/api/students", studentRoutes);
+app.use("/api/admin", adminRoutes);        
+          
 
 // Test route
 app.get("/", (req, res) => {
@@ -18,4 +24,3 @@ app.get("/", (req, res) => {
 });
 
 module.exports = app;
-

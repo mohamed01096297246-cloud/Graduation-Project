@@ -7,12 +7,12 @@ const studentSchema = new mongoose.Schema({
   },
 
   grade: {
-    type: String, // like "Grade 1", "Grade 5", "Primary 3"
+    type: String, 
     required: true
   },
 
   classroom: {
-    type: String, // Class name or number
+    type: String, 
     required: true
   },
 
@@ -32,4 +32,4 @@ const studentSchema = new mongoose.Schema({
   ]
 });
 
-module.exports = mongoose.model("Student", studentSchema);
+module.exports = mongoose.model("Student", studentSchema)
