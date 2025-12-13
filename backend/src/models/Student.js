@@ -18,7 +18,7 @@ const studentSchema = new mongoose.Schema({
 
   parent: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: "User"
+    ref: "User"//fk
   },
 
   subjects: [
@@ -26,7 +26,7 @@ const studentSchema = new mongoose.Schema({
       name: String,
       teacher: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User"
+        ref: "User"//fk
       }
     }
   ]

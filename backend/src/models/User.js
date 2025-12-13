@@ -3,26 +3,22 @@ const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
-
   username: { type: String, unique: true },
-
   nationalId: { type: String, required: true, unique: true },
-
-  email: { type: String },
-
-  role: { type: String, enum: ["admin", "teacher", "parent"], default: "parent" },
-
+  email: String,
+  role: {
+    type: String,
+    enum: ["admin", "teacher", "parent"],
+    default: "parent",
+  },
   password: { type: String, required: true },
-
   linkedStudents: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
-  
-  active: { type: Boolean, default: true }
+  active: { type: Boolean, default: true },
 });
 
-// 🚀 **Fix: Remove next completely — make it fully async**
+// HASH PASSWORD
 userSchema.pre("save", async function () {
   if (!this.isModified("password")) return;
-
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
 });
