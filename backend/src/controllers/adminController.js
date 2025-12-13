@@ -64,6 +64,7 @@ exports.createStudent = async (req, res) => {
         ? { username: generatedUsername, password: generatedPassword }
         : "Parent already exists"
     });
+    
   } catch (err) {
 
     res.status(500).json({ error: err.message });
