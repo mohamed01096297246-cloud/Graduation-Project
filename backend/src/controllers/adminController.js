@@ -13,6 +13,46 @@ function generatePassword() {
   return Math.random().toString(36).slice(-8) + "A1@";
 }
 
+exports.createAdmin = async (req, res) => {
+  try {
+    const { name, username, nationalId, email, password } = req.body;
+
+    const existingUser = await User.findOne({
+      $or: [{ username }, { nationalId }]
+    });
+
+    if (existingUser) {
+      return res.status(400).json({
+        message: "Admin already exists"
+      });
+    }
+
+  
+    const admin = await User.create({
+      name,
+      username,
+      nationalId,
+      email,
+      password, 
+      role: "admin",
+      active: true
+    });
+
+    res.status(201).json({
+      message: "Admin created successfully",
+      admin: {
+        id: admin._id,
+        name: admin.name,
+        username: admin.username,
+        role: admin.role
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 exports.createStudent = async (req, res) => {
   try {
     const {
@@ -70,3 +110,39 @@ exports.createStudent = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.createTeacher = async (req, res) => {
+  try {
+    const { name, nationalId, email } = req.body;
+
+    const exists = await User.findOne({ nationalId });
+    if (exists) {
+      return res.status(400).json({ message: "Teacher already exists" });
+    }
+
+    const username = generateUsername(name);
+    const password = generatePassword();
+
+    const teacher = await User.create({
+      name,
+      nationalId,
+      email,
+      role: "teacher",
+      username,
+      password,
+      active: true
+    });
+
+    res.status(201).json({
+      message: "Teacher created successfully",
+      credentials: {
+        username,
+        password
+      }
+    });
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
