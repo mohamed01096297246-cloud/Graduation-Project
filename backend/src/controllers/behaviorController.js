@@ -1,9 +1,8 @@
 const Behavior = require("../models/Behavior");
 const Student = require("../models/Student");
 
-// المعلم يضيف سلوك
 exports.addBehavior = async (req, res) => {
-  const { studentId, note } = req.body;
+  const { studentId, note, type } = req.body;
 
   const student = await Student.findById(studentId);
   if (!student) {
@@ -13,6 +12,7 @@ exports.addBehavior = async (req, res) => {
   const behavior = await Behavior.create({
     student: studentId,
     teacher: req.user._id,
+    type,
     note
   });
 
@@ -22,14 +22,24 @@ exports.addBehavior = async (req, res) => {
   });
 };
 
-// ولي الأمر يشوف سلوك أولاده
-exports.getParentBehaviors = async (req, res) => {
-  const students = await Student.find({ parent: req.user._id });
-  const ids = students.map(s => s._id);
+exports.getBehaviorForParent = async (req, res) => {
+  try {
+    
+    const students = await Student.find({ parent: req.user._id }).select("_id");
 
-  const behaviors = await Behavior.find({
-    student: { $in: ids }
-  }).populate("student teacher");
+    const studentIds = students.map(s => s._id);
 
-  res.json(behaviors);
+    
+const behaviors = await Behavior.find({
+  student: { $in: studentIds }
+})
+.populate("student", "name grade classroom")
+.select("type note student createdAt");
+
+
+    res.status(200).json(behaviors);
+
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

@@ -28,7 +28,6 @@ const attendanceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// منع تكرار تسجيل الحضور لنفس الطالب في نفس اليوم
 attendanceSchema.index({ student: 1, date: 1 }, { unique: true });
 
 module.exports = mongoose.model("Attendance", attendanceSchema);

@@ -1,7 +1,6 @@
 const Homework = require("../models/Homework");
 const Student = require("../models/Student");
 
-// Teacher adds homework
 exports.addHomework = async (req, res) => {
   const { title, description, grade, subject, dueDate } = req.body;
 
@@ -20,7 +19,6 @@ exports.addHomework = async (req, res) => {
   });
 };
 
-// Parent views homework
 exports.getParentHomework = async (req, res) => {
   const students = await Student.find({ parent: req.user._id });
   const grades = [...new Set(students.map(s => s.grade))];

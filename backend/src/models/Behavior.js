@@ -13,6 +13,12 @@ const behaviorSchema = new mongoose.Schema({
     required: true
   },
 
+    type: {
+    type: String,
+    enum: ["positive", "negative","bad"],
+    required: true
+  },
+
   note: {
     type: String,
     required: true

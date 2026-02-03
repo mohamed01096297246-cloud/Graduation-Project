@@ -1,7 +1,6 @@
 const HomeworkResult = require("../models/HomeworkResult");
 const Student = require("../models/Student");
 
-// Teacher grades homework
 exports.gradeHomework = async (req, res) => {
   const { homeworkId, studentId, marks, feedback } = req.body;
 
@@ -24,7 +23,6 @@ exports.gradeHomework = async (req, res) => {
   });
 };
 
-// Parent views homework grades
 exports.getParentHomeworkResults = async (req, res) => {
   const students = await Student.find({ parent: req.user._id });
   const ids = students.map(s => s._id);

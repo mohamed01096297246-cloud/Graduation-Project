@@ -8,7 +8,6 @@ const {
 
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-// Teacher
 router.post(
   "/",
   protect,
@@ -16,7 +15,6 @@ router.post(
   gradeHomework
 );
 
-// Parent
 router.get(
   "/parent",
   protect,

@@ -9,7 +9,6 @@ const {
 
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-// Admin
 router.post(
   "/",
   protect,
@@ -17,7 +16,6 @@ router.post(
   addTimetableEntry
 );
 
-// Teacher
 router.get(
   "/teacher",
   protect,
@@ -25,7 +23,6 @@ router.get(
   getTeacherTimetable
 );
 
-// Parent
 router.get(
   "/parent",
   protect,

@@ -1,6 +1,6 @@
 const Exam = require("../models/Exam");
 
-// Admin only
+
 exports.createExam = async (req, res) => {
   const { title, grade, subject, term, totalMarks, date } = req.body;
 
@@ -19,7 +19,7 @@ exports.createExam = async (req, res) => {
   });
 };
 
-// Parent / Teacher
+
 exports.getExamsByGrade = async (req, res) => {
   const { grade } = req.params;
 

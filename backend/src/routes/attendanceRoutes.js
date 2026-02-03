@@ -9,7 +9,6 @@ const {
 
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-// Teacher: تسجيل حضور
 router.post(
   "/",
   protect,
@@ -17,7 +16,6 @@ router.post(
   markAttendance
 );
 
-// Parent: عرض حضور الأبناء
 router.get(
   "/parent",
   protect,
@@ -25,7 +23,6 @@ router.get(
   getParentAttendance
 );
 
-// Teacher: عرض حضوره المسجل
 router.get(
   "/teacher",
   protect,

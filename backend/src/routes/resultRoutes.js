@@ -4,7 +4,6 @@ const router = express.Router();
 const { addResult, getParentResults } = require("../controllers/resultController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-// Teacher
 router.post(
   "/",
   protect,
@@ -12,7 +11,6 @@ router.post(
   addResult
 );
 
-// Parent
 router.get(
   "/parent",
   protect,

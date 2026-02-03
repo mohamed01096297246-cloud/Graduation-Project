@@ -1,13 +1,10 @@
 const Timetable = require("../models/Timetable");
 const Student = require("../models/Student");
 
-// ===============================
-// Admin: إضافة حصة في الجدول
-// ===============================
 exports.addTimetableEntry = async (req, res) => {
   const { grade, day, period, subject, teacherId } = req.body;
 
-  // منع تكرار نفس الحصة
+  
   const exists = await Timetable.findOne({ grade, day, period });
   if (exists) {
     return res.status(400).json({
@@ -29,9 +26,6 @@ exports.addTimetableEntry = async (req, res) => {
   });
 };
 
-// ===============================
-// Teacher: يشوف جدوله
-// ===============================
 exports.getTeacherTimetable = async (req, res) => {
   const teacherId = req.user._id;
 
@@ -42,9 +36,6 @@ exports.getTeacherTimetable = async (req, res) => {
   res.json(timetable);
 };
 
-// ===============================
-// Parent: يشوف جدول ابنه
-// ===============================
 exports.getParentTimetable = async (req, res) => {
   const student = await Student.findOne({ parent: req.user._id });
 

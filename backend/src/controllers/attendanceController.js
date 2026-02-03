@@ -1,9 +1,7 @@
 const Attendance = require("../models/Attendance");
 const Student = require("../models/Student");
 
-// ===============================
-// Teacher: تسجيل الحضور
-// ===============================
+
 exports.markAttendance = async (req, res) => {
   try {
     const { studentId, date, status } = req.body;
@@ -35,9 +33,6 @@ exports.markAttendance = async (req, res) => {
   }
 };
 
-// ===============================
-// Parent: عرض حضور ابنه
-// ===============================
 exports.getParentAttendance = async (req, res) => {
   const students = await Student.find({ parent: req.user._id });
   const studentIds = students.map(s => s._id);
@@ -51,9 +46,6 @@ exports.getParentAttendance = async (req, res) => {
   res.json(attendance);
 };
 
-// ===============================
-// Teacher: عرض حضور طلابه
-// ===============================
 exports.getTeacherAttendance = async (req, res) => {
   const attendance = await Attendance.find({
     recordedBy: req.user._id

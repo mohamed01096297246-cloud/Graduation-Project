@@ -1,7 +1,6 @@
 const Result = require("../models/Result");
 const Student = require("../models/Student");
 
-// Teacher records result
 exports.addResult = async (req, res) => {
   const { studentId, examId, marks } = req.body;
 
@@ -23,7 +22,6 @@ exports.addResult = async (req, res) => {
   });
 };
 
-// Parent views results
 exports.getParentResults = async (req, res) => {
   const students = await Student.find({ parent: req.user._id });
   const ids = students.map(s => s._id);

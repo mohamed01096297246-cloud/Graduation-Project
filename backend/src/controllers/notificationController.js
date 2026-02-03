@@ -1,8 +1,5 @@
 const Notification = require("../models/Notification");
 
-// ===============================
-// Admin: إنشاء إعلان
-// ===============================
 exports.createNotification = async (req, res) => {
   const { title, message, target, parentId } = req.body;
 
@@ -20,9 +17,6 @@ exports.createNotification = async (req, res) => {
   });
 };
 
-// ===============================
-// Parent: يشوف إعلاناته
-// ===============================
 exports.getParentNotifications = async (req, res) => {
   const notifications = await Notification.find({
     $or: [
