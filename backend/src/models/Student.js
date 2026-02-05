@@ -1,14 +1,24 @@
 const mongoose = require("mongoose");
 
 const studentSchema = new mongoose.Schema({
-  name: {
+  fullName: {
     type: String,
     required: true
+  },
+
+  phoneNumber:{
+  type:Int32Array,
+  require:true
   },
 
   grade: {
     type: String, 
     required: true
+  },
+
+  email:{
+    type:String,
+    require:true
   },
 
   classroom: {

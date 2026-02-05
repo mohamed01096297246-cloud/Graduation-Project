@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>EduLink Test Dashboard</title>
+</head>
+
+<body>
+
+<h1>EduLink Testing Dashboard</h1>
+
+<button onclick="logout()">Logout</button>
+<hr>
+
+<!-- LOGIN -->
+<div id="loginSection">
+
+<h2>Login</h2>
+
+<input id="username" placeholder="Username"><br><br>
+<input id="password" type="password" placeholder="Password"><br><br>
+
+<button onclick="login()">Login</button>
+
+</div>
+
+
+<!-- ADMIN PANEL -->
+<div id="adminPanel" style="display:none">
+
+<h2>Admin Panel</h2>
+
+<h3>Create Teacher</h3>
+<input id="tName" placeholder="Teacher Name">
+<input id="tNid" placeholder="National ID">
+<button onclick="createTeacher()">Create Teacher</button>
+
+<hr>
+
+<h3>Create Student</h3>
+<input id="sName" placeholder="Student Name">
+<input id="grade" placeholder="Grade">
+<input id="classroom" placeholder="Classroom">
+<input id="pName" placeholder="Parent Name">
+<input id="pNid" placeholder="Parent National ID">
+<button onclick="createStudent()">Create Student</button>
+
+</div>
+
+
+<!-- TEACHER PANEL -->
+<div id="teacherPanel" style="display:none">
+
+<h2>Teacher Panel</h2>
+
+<input id="studentId" placeholder="Student ID">
+
+<select id="status">
+<option value="present">Present</option>
+<option value="absent">Absent</option>
+<option value="late">Late</option>
+</select>
+
+<button onclick="markAttendance()">Mark Attendance</button>
+
+</div>
+
+
+<!-- PARENT PANEL -->
+<div id="parentPanel" style="display:none">
+
+<h2>Parent Panel</h2>
+
+<button onclick="loadAttendance()">Show Attendance</button>
+
+<pre id="attendanceResult"></pre>
+
+</div>
+
+
+<script>
+
+function showPanel(role){
+
+document.getElementById("loginSection").style.display="none";
+
+if(role === "admin")
+document.getElementById("adminPanel").style.display="block";
+
+if(role === "teacher")
+document.getElementById("teacherPanel").style.display="block";
+
+if(role === "parent")
+document.getElementById("parentPanel").style.display="block";
+
+}
+
+
+// LOGIN
+async function login(){
+
+const res = await fetch("http://localhost:5000/api/auth/login",{
+
+method:"POST",
+headers:{ "Content-Type":"application/json" },
+
+body: JSON.stringify({
+username: username.value,
+password: password.value
+})
+
+});
+
+const data = await res.json();
+
+localStorage.setItem("token", data.token);
+localStorage.setItem("role", data.user.role);
+
+showPanel(data.user.role);
+
+}
+
+
+// CREATE TEACHER
+async function createTeacher(){
+
+const token = localStorage.getItem("token");
+
+await fetch("http://localhost:5000/api/admin/create-teacher",{
+
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer " + token
+},
+
+body: JSON.stringify({
+name: tName.value,
+nationalId: tNid.value
+})
+
+});
+
+alert("Teacher Created");
+
+}
+
+
+// CREATE STUDENT
+async function createStudent(){
+
+const token = localStorage.getItem("token");
+
+await fetch("http://localhost:5000/api/admin/create-student",{
+
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer " + token
+},
+
+body: JSON.stringify({
+studentName: sName.value,
+grade: grade.value,
+classroom: classroom.value,
+parentName: pName.value,
+parentNationalId: pNid.value
+})
+
+});
+
+alert("Student Created");
+
+}
+
+
+// MARK ATTENDANCE
+async function markAttendance(){
+
+const token = localStorage.getItem("token");
+
+await fetch("http://localhost:5000/api/attendance",{
+
+method:"POST",
+headers:{
+"Content-Type":"application/json",
+"Authorization":"Bearer " + token
+},
+
+body: JSON.stringify({
+studentId: studentId.value,
+status: status.value
+})
+
+});
+
+alert("Attendance Saved");
+
+}
+
+
+// LOAD PARENT ATTENDANCE
+async function loadAttendance(){
+
+const token = localStorage.getItem("token");
+
+const res = await fetch("http://localhost:5000/api/attendance/parent",{
+
+headers:{
+"Authorization":"Bearer " + token
+}
+
+});
+
+const data = await res.json();
+
+attendanceResult.textContent = JSON.stringify(data,null,2);
+
+}
+function logout(){
+  localStorage.clear();
+  location.reload();
+}
+
+
+</script>
+
+</body>
+</html>

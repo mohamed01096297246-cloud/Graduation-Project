@@ -2,8 +2,8 @@ const Student = require("../models/Student");
 const User = require("../models/User");
 
 
-function generateUsername(name) {
-  const base = name.trim().toLowerCase().replace(/\s+/g, "");
+function generateUsername(fullName) {
+  const base = fullName.trim().toLowerCase().replace(/\s+/g, "");
   const random = Math.floor(1000 + Math.random() * 9000);
   return `${base}${random}`;
 }
@@ -15,7 +15,7 @@ function generatePassword() {
 
 exports.createAdmin = async (req, res) => {
   try {
-    const { name, username, nationalId, email, password } = req.body;
+    const { fullName,phoneNumber,username, nationalId, email, password } = req.body;
 
     const existingUser = await User.findOne({
       $or: [{ username }, { nationalId }]
@@ -29,7 +29,8 @@ exports.createAdmin = async (req, res) => {
 
   
     const admin = await User.create({
-      name,
+      fullName,
+      phoneNumber,
       username,
       nationalId,
       email,
@@ -42,7 +43,7 @@ exports.createAdmin = async (req, res) => {
       message: "Admin created successfully",
       admin: {
         id: admin._id,
-        name: admin.name,
+        name: admin.fullName,
         username: admin.username,
         role: admin.role
       }
@@ -56,10 +57,13 @@ exports.createAdmin = async (req, res) => {
 exports.createStudent = async (req, res) => {
   try {
     const {
-      studentName,
+      studentFullName,
+      phoneNumber,
+      email,
       grade,
       classroom,
       parentName,
+      parentPhoneNumber,
       parentNationalId,
       parentEmail
     } = req.body;
@@ -79,6 +83,7 @@ exports.createStudent = async (req, res) => {
 
       parent = await User.create({
         name: parentName,
+        phonenumber:parentPhoneNumber,
         nationalId: parentNationalId,
         email: parentEmail || null,
         role: "parent",
@@ -88,7 +93,9 @@ exports.createStudent = async (req, res) => {
     }
 
     const student = await Student.create({
-      name: studentName,
+      name: studentFullName,
+      phonenumber: phoneNumber,
+      Email:email,
       grade,
       classroom,
       parent: parent._id
@@ -113,7 +120,7 @@ exports.createStudent = async (req, res) => {
 
 exports.createTeacher = async (req, res) => {
   try {
-    const { name, nationalId, email } = req.body;
+    const { fullName,phoneNumber, nationalId, email } = req.body;
 
     const exists = await User.findOne({ nationalId });
     if (exists) {
@@ -124,7 +131,8 @@ exports.createTeacher = async (req, res) => {
     const password = generatePassword();
 
     const teacher = await User.create({
-      name,
+      fullName,
+      phoneNumber,
       nationalId,
       email,
       role: "teacher",
