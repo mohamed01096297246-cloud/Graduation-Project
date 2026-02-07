@@ -7,7 +7,7 @@ const studentSchema = new mongoose.Schema({
   },
 
   phoneNumber:{
-  type:Int32Array,
+  type:String,
   require:true
   },
 

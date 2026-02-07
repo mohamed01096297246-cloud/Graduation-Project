@@ -1,17 +1,9 @@
+const bcrypt = require("bcryptjs");
+const sendCredentialsEmail = require("../utils/emailService");
+const { generateUsername, generatePassword } = require("../utils/generateCredentials");
+
 const Student = require("../models/Student");
 const User = require("../models/User");
-
-
-function generateUsername(fullName) {
-  const base = fullName.trim().toLowerCase().replace(/\s+/g, "");
-  const random = Math.floor(1000 + Math.random() * 9000);
-  return `${base}${random}`;
-}
-
-
-function generatePassword() {
-  return Math.random().toString(36).slice(-8) + "A1@";
-}
 
 exports.createAdmin = async (req, res) => {
   try {
@@ -76,26 +68,39 @@ exports.createStudent = async (req, res) => {
     let generatedUsername = null;
     let generatedPassword = null;
 
-   
+
     if (!parent) {
       generatedUsername = generateUsername(parentName);
       generatedPassword = generatePassword();
 
+      const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
       parent = await User.create({
-        name: parentName,
-        phonenumber:parentPhoneNumber,
+        fullName: parentName,
+        phoneNumber: parentPhoneNumber,
         nationalId: parentNationalId,
-        email: parentEmail || null,
+        email: parentEmail,
         role: "parent",
         username: generatedUsername,
-        password: generatedPassword 
+        password: hashedPassword,
+        active: true
       });
+
+
+      if (parentEmail) {
+        await sendCredentialsEmail(
+          parentEmail,
+          generatedUsername,
+          generatedPassword,
+          "Parent"
+        );
+      }
     }
 
     const student = await Student.create({
       name: studentFullName,
-      phonenumber: phoneNumber,
-      Email:email,
+      phoneNumber,
+      email,
       grade,
       classroom,
       parent: parent._id
@@ -105,30 +110,33 @@ exports.createStudent = async (req, res) => {
     await parent.save();
 
     res.status(201).json({
-      message: "Student and Parent created successfully",
+      message: "Student created successfully",
       student,
-      parentCredentials: generatedUsername
-        ? { username: generatedUsername, password: generatedPassword }
-        : "Parent already exists"
+      parentAccount:
+        generatedUsername
+          ? "Parent account created and credentials sent to email"
+          : "Parent already exists"
     });
-    
-  } catch (err) {
 
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+
+
 exports.createTeacher = async (req, res) => {
   try {
-    const { fullName,phoneNumber, nationalId, email } = req.body;
+    const { fullName, phoneNumber, nationalId, email } = req.body;
 
     const exists = await User.findOne({ nationalId });
     if (exists) {
       return res.status(400).json({ message: "Teacher already exists" });
     }
 
-    const username = generateUsername(name);
-    const password = generatePassword();
+    const username = generateUsername(fullName);
+    const plainPassword = generatePassword();
+    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     const teacher = await User.create({
       fullName,
@@ -137,15 +145,26 @@ exports.createTeacher = async (req, res) => {
       email,
       role: "teacher",
       username,
-      password,
+      password: hashedPassword,
       active: true
     });
 
+    if (email) {
+      await sendCredentialsEmail(
+        email,
+        username,
+        plainPassword,
+        "Teacher"
+      );
+    }
+
     res.status(201).json({
       message: "Teacher created successfully",
-      credentials: {
-        username,
-        password
+      teacher: {
+        id: teacher._id,
+        fullName: teacher.fullName,
+        username: teacher.username,
+        role: teacher.role
       }
     });
 
