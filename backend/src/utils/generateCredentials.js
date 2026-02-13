@@ -1,5 +1,5 @@
-const generateUsername = (fullName) => {
-  return fullName.replace(/\s/g, "").toLowerCase() + Math.floor(Math.random() * 1000);
+const generateUsername = (firstName,lastName,nationalId) => {
+  return firstName,lastName,nationalId.replace(/\s/g, "").toLowerCase() + Math.floor(Math.random() * 1000);
 };
 
 const generatePassword = () => {
