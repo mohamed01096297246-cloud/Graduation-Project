@@ -7,7 +7,7 @@ const User = require("../models/User");
 
 exports.createAdmin = async (req, res) => {
   try {
-    const { fullName,phoneNumber,username, nationalId, email, password } = req.body;
+    const { firstName,lastName,phoneNumber,username, nationalId, email, password } = req.body;
 
     const existingUser = await User.findOne({
       $or: [{ username }, { nationalId }]
@@ -21,7 +21,8 @@ exports.createAdmin = async (req, res) => {
 
   
     const admin = await User.create({
-      fullName,
+      firstName,
+      lastName,
       phoneNumber,
       username,
       nationalId,
@@ -35,7 +36,7 @@ exports.createAdmin = async (req, res) => {
       message: "Admin created successfully",
       admin: {
         id: admin._id,
-        name: admin.fullName,
+        name: admin.firstName,lastName,
         username: admin.username,
         role: admin.role
       }
@@ -49,12 +50,15 @@ exports.createAdmin = async (req, res) => {
 exports.createStudent = async (req, res) => {
   try {
     const {
-      studentFullName,
+      firstName,
+      lastName,
       phoneNumber,
       email,
       grade,
+      gender,
       classroom,
-      parentName,
+      parentFirstName,
+      parentLastName,
       parentPhoneNumber,
       parentNationalId,
       parentEmail
@@ -76,7 +80,8 @@ exports.createStudent = async (req, res) => {
       const hashedPassword = await bcrypt.hash(generatedPassword, 10);
 
       parent = await User.create({
-        fullName: parentName,
+        firstName: parentFirstName,
+        lastName:parentLastName,
         phoneNumber: parentPhoneNumber,
         nationalId: parentNationalId,
         email: parentEmail,
@@ -98,11 +103,13 @@ exports.createStudent = async (req, res) => {
     }
 
     const student = await Student.create({
-      name: studentFullName,
+      firstName: firstName,
+      lasttName:lastName,
       phoneNumber,
       email,
       grade,
       classroom,
+      gender,
       parent: parent._id
     });
 
@@ -127,19 +134,20 @@ exports.createStudent = async (req, res) => {
 
 exports.createTeacher = async (req, res) => {
   try {
-    const { fullName, phoneNumber, nationalId, email } = req.body;
+    const { firstName,lastName, phoneNumber, nationalId, email } = req.body;
 
     const exists = await User.findOne({ nationalId });
     if (exists) {
       return res.status(400).json({ message: "Teacher already exists" });
     }
 
-    const username = generateUsername(fullName);
+    const username = generateUsername(firstName,lastName);
     const plainPassword = generatePassword();
     const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     const teacher = await User.create({
-      fullName,
+      firstName,
+      lastName,
       phoneNumber,
       nationalId,
       email,
@@ -162,7 +170,7 @@ exports.createTeacher = async (req, res) => {
       message: "Teacher created successfully",
       teacher: {
         id: teacher._id,
-        fullName: teacher.fullName,
+        fullName: teacher.firstName.lastName,
         username: teacher.username,
         role: teacher.role
       }
