@@ -1,28 +1,29 @@
 const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 
 const userSchema = new mongoose.Schema({
-  firstName: { type: String, required: true },
-  lastName: { type: String, required: true },
-  nationalId: { type: String, required: true, unique: true },
-  phoneNumber: { type: String, required: true, unique: true },
-  email: String,
+  firstName: { type: String, required: true, trim: true },
+  // middleName:{ type: String, required: true, trim: true },
+  lastName: { type: String, required: true, trim: true },
+  nationalId: { type: String, required: true, unique: true, trim: true },
+  phoneNumber: { type: String, required: true, unique: true, trim: true },
+  email: { type: String, trim: true },
   role: {
     type: String,
     enum: ["admin", "teacher", "parent"],
     default: "parent",
   },
-  username: { type: String, unique: true },
+  username: { type: String, unique: true, trim: true },
   password: { type: String, required: true },
   linkedStudents: [{ type: mongoose.Schema.Types.ObjectId, ref: "Student" }],
   active: { type: Boolean, default: true },
 });
 
-// HASH PASSWORD
+// HASH PASSWORD (مرة واحدة فقط هنا)
 userSchema.pre("save", async function () {
-  if (!this.isModified("password")) return;
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  if (!this.isModified("password")) return ;
+  this.password = await bcrypt.hash(this.password.trim(), 10);
+  
 });
 
 module.exports = mongoose.model("User", userSchema);

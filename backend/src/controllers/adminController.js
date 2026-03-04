@@ -1,4 +1,4 @@
-const bcrypt = require("bcryptjs");
+const bcrypt = require("bcrypt");
 const sendCredentialsEmail = require("../utils/emailService");
 const { generateUsername, generatePassword } = require("../utils/generateCredentials");
 
@@ -21,7 +21,7 @@ exports.createAdmin = async (req, res) => {
 
     const username = generateUsername(`${firstName} ${lastName}`);
     const plainPassword = generatePassword();
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
+   
 
     const admin = await User.create({
       firstName,
@@ -31,7 +31,7 @@ exports.createAdmin = async (req, res) => {
       email,
       role: "admin",
       username,
-      password: hashedPassword,
+      password:plainPassword,
       active: true
     });
 
@@ -59,6 +59,7 @@ exports.createStudent = async (req, res) => {
   try {
     const {
       firstName,
+      // middleName,
       lastName,
       phoneNumber,
       email,
@@ -87,7 +88,7 @@ exports.createStudent = async (req, res) => {
     if (!parent) {
       generatedUsername = generateUsername(`${parentFirstName} ${parentLastName}`);
       generatedPassword = generatePassword();
-      const hashedPassword = await bcrypt.hash(generatedPassword, 10);
+
 
       parent = await User.create({
         firstName: parentFirstName,
@@ -97,7 +98,7 @@ exports.createStudent = async (req, res) => {
         email: parentEmail,
         role: "parent",
         username: generatedUsername,
-        password: hashedPassword,
+        password: generatedPassword,
         active: true,
         linkedStudents: []
       });
@@ -151,7 +152,6 @@ exports.createTeacher = async (req, res) => {
 
     const username = generateUsername(`${firstName} ${lastName}`);
     const plainPassword = generatePassword();
-    const hashedPassword = await bcrypt.hash(plainPassword, 10);
 
     const teacher = await User.create({
       firstName,
@@ -161,7 +161,7 @@ exports.createTeacher = async (req, res) => {
       email,
       role: "teacher",
       username,
-      password: hashedPassword,
+      password: plainPassword,
       active: true
     });
 
