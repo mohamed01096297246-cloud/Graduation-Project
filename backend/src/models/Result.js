@@ -6,24 +6,22 @@ const resultSchema = new mongoose.Schema({
     ref: "Student",
     required: true
   },
-
   exam: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Exam",
     required: true
   },
-
   marks: {
     type: Number,
     required: true
   },
-
   recordedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true
   }
-
 }, { timestamps: true });
+
+resultSchema.index({ student: 1, exam: 1 }, { unique: true });
 
 module.exports = mongoose.model("Result", resultSchema);

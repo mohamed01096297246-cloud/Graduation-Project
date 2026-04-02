@@ -4,18 +4,16 @@ const Student = require("../models/Student");
 
 exports.markAttendance = async (req, res) => {
   try {
-    const { studentId, date, status } = req.body;
+    const { studentId, date, status } = req.body; 
 
-    const student = await Student.findById(studentId);
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
-    }
+    const inputDate = date ? new Date(date) : new Date();
+    inputDate.setHours(0, 0, 0, 0); 
 
     const attendance = await Attendance.create({
       student: studentId,
-      date: date || new Date(),
+      date: inputDate,
       status,
-      recordedBy: req.user._id
+      recordedBy: req.user._id 
     });
 
     res.status(201).json({
@@ -28,7 +26,6 @@ exports.markAttendance = async (req, res) => {
         message: "Attendance already recorded for this student today"
       });
     }
-
     res.status(500).json({ error: err.message });
   }
 };

@@ -21,14 +21,11 @@ const examSchema = new mongoose.Schema({
     enum: ["midterm", "final"],
     required: true
   },
-
   totalMarks: {
     type: Number,
     required: true
   },
-
   date: Date
 
 }, { timestamps: true });
-
 module.exports = mongoose.model("Exam", examSchema);

@@ -9,6 +9,10 @@ const homeworkSchema = new mongoose.Schema({
     type: String,
     required: true
   },
+  
+classroom: {
+   type: String, 
+   required: true },
 
   subject: {
     type: String,

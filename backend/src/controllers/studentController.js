@@ -12,8 +12,6 @@ exports.getStudent = async (req, res) => {
 };
 
 exports.getStudentsByParent = async (req, res) => {
-  const students = await Student.find({
-    parent: req.params.parentId,
-  });
+const students = await Student.find({ parent: req.params.parentId });
   res.json(students);
 };

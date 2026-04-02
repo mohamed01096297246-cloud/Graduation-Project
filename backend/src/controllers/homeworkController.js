@@ -2,30 +2,43 @@ const Homework = require("../models/Homework");
 const Student = require("../models/Student");
 
 exports.addHomework = async (req, res) => {
-  const { title, description, grade, subject, dueDate } = req.body;
+  try { 
+    const { title, description, grade,classroom, subject, dueDate } = req.body;
 
-  const homework = await Homework.create({
-    title,
-    description,
-    grade,
-    subject,
-    dueDate,
-    teacher: req.user._id
-  });
+    const homework = await Homework.create({
+      title,
+      description,
+      grade,
+      classroom,
+      subject,
+      dueDate,
+      teacher: req.user._id
+    });
 
-  res.status(201).json({
-    message: "Homework added successfully",
-    homework
-  });
+    res.status(201).json({
+      message: "Homework added successfully",
+      homework
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };
 
 exports.getParentHomework = async (req, res) => {
-  const students = await Student.find({ parent: req.user._id });
-  const grades = [...new Set(students.map(s => s.grade))];
+  try {
+    const students = await Student.find({ parent: req.user._id });
+    
+    const studentFilters = students.map(s => ({
+      grade: s.grade,
+      classroom: s.classroom
+    }));
 
-  const homework = await Homework.find({
-    grade: { $in: grades }
-  });
+    const homework = await Homework.find({
+      $or: studentFilters 
+    }).sort({ createdAt: -1 });
 
-  res.json(homework);
+    res.json(homework);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 };

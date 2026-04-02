@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-
 const behaviorSchema = new mongoose.Schema({
   student: {
     type: mongoose.Schema.Types.ObjectId,
@@ -12,10 +11,9 @@ const behaviorSchema = new mongoose.Schema({
     ref: "User",
     required: true
   },
-
     type: {
     type: String,
-    enum: ["positive", "negative","bad"],
+    enum: ["positive", "negative","neutral"],
     required: true
   },
 
