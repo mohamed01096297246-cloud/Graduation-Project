@@ -1,12 +1,12 @@
-const Result = require("../models/Result");
+const Result = require("../models/Result"); 
 const Student = require("../models/Student");
-
+const Notification = require("../models/Notification");
 
 exports.addResult = async (req, res) => {
   try {
     const { studentId, examId, marks } = req.body;
 
-    const student = await Student.findById(studentId);
+    const student = await Student.findById(studentId).populate("parent");
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
@@ -16,6 +16,14 @@ exports.addResult = async (req, res) => {
       exam: examId,
       marks,
       recordedBy: req.user._id
+    });
+
+    await Notification.create({
+      title: "ظهور نتيجة",
+      message: `تم رصد درجة الطالب ${student.firstName} الآن، يمكنك الاطلاع عليها في الامتحان.`,
+      target: "parent",
+      parent: student.parent._id,
+      createdBy: req.user._id
     });
 
     res.status(201).json({

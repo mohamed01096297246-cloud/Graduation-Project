@@ -1,27 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
-const {
-  markAttendance,
-  getParentAttendance,
-  getTeacherAttendance
-} = require("../controllers/attendanceController");
-
+const { markAttendance, getAttendanceForParent } = require("../controllers/attendanceController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-router.post(
-  "/",
-  protect,
-  authorize("teacher"),
-  markAttendance
-);
+router.post("/", protect, authorize("teacher"), markAttendance);
 
-router.get(
-  "/parent",
-  protect,
-  authorize("parent"),
-  getParentAttendance
-);
+router.get("/parent", protect, authorize("parent"), getAttendanceForParent);
 
 router.get(
   "/teacher",
@@ -29,5 +14,4 @@ router.get(
   authorize("teacher"),
   getTeacherAttendance
 );
-
 module.exports = router;

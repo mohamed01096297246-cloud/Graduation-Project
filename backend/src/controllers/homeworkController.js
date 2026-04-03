@@ -1,5 +1,6 @@
 const Homework = require("../models/Homework");
 const Student = require("../models/Student");
+const Notification = require("../models/Notification");
 
 exports.addHomework = async (req, res) => {
   try { 
@@ -13,6 +14,12 @@ exports.addHomework = async (req, res) => {
       subject,
       dueDate,
       teacher: req.user._id
+    });
+    await Notification.create({
+      title: "واجب جديد",
+      message: `تم إضافة واجب جديد في مادة ${subject} لصف ${grade}.`,
+      target: "all",
+      createdBy: req.user._id
     });
 
     res.status(201).json({

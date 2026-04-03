@@ -1,29 +1,16 @@
 const express = require("express");
 const router = express.Router();
 
-const {
-  createAdmin,
-  createTeacher,
-  createStudent
-} = require("../controllers/adminController");
-
+const { createAdmin, createStudent, createTeacher } = require("../controllers/adminController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
+router.use(protect);
+router.use(authorize("admin"));
 
 router.post("/create-admin", createAdmin);
 
-router.post(
-  "/create-teacher",
-  protect,
-  authorize("admin"),
-  createTeacher
-);
+router.post("/create-student", createStudent);
 
-router.post(
-  "/create-student",
-  protect,
-  authorize("admin"),
-  createStudent
-);
+router.post("/create-teacher", createTeacher);
 
 module.exports = router;

@@ -1,5 +1,6 @@
 const Attendance = require("../models/Attendance");
 const Student = require("../models/Student");
+const Notification = require("../models/Notification");
 
 
 exports.markAttendance = async (req, res) => {
@@ -15,6 +16,16 @@ exports.markAttendance = async (req, res) => {
       status,
       recordedBy: req.user._id 
     });
+    if (status === "absent") {
+      const student = await Student.findById(studentId);
+      await Notification.create({
+        title: "تنبيه غياب",
+        message: `نحيطكم علماً بأن الطالب ${student.firstName} تم تسجيله غياب اليوم.`,
+        target: "parent",
+        parent: student.parent,
+        createdBy: req.user._id
+      });
+    }
 
     res.status(201).json({
       message: "Attendance recorded successfully",

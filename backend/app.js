@@ -57,4 +57,13 @@ app.get("/", (req, res) => {
   res.send("EduLink Backend API is running...");
 });
 
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    success: false,
+    message: "حدث خطأ في الخادم الداخلي",
+    error: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
+});
+
 module.exports = app;

@@ -29,5 +29,4 @@ router.get(
   authorize("parent"),
   getParentTimetable
 );
-
 module.exports = router;

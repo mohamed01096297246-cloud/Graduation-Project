@@ -1,27 +1,23 @@
-const bcrypt = require("bcrypt");
 const sendCredentialsEmail = require("../utils/emailService");
 const { generateUsername, generatePassword } = require("../utils/generateCredentials");
-
 const Student = require("../models/Student");
 const User = require("../models/User");
-
 
 exports.createAdmin = async (req, res) => {
   try {
     const { firstName, lastName, phoneNumber, nationalId, email } = req.body;
 
-    if (!firstName || !lastName) {
-      return res.status(400).json({ message: "First and last name are required" });
+    if (!firstName || !lastName || !nationalId) {
+      return res.status(400).json({ message: "First name, last name, and National ID are required" });
     }
 
     const existingUser = await User.findOne({ nationalId });
     if (existingUser) {
-      return res.status(400).json({ message: "Admin already exists" });
+      return res.status(400).json({ message: "User with this National ID already exists" });
     }
 
     const username = generateUsername(`${firstName} ${lastName}`);
     const plainPassword = generatePassword();
-   
 
     const admin = await User.create({
       firstName,
@@ -31,7 +27,7 @@ exports.createAdmin = async (req, res) => {
       email,
       role: "admin",
       username,
-      password:plainPassword,
+      password: plainPassword, 
       active: true
     });
 
@@ -41,54 +37,31 @@ exports.createAdmin = async (req, res) => {
 
     res.status(201).json({
       message: "Admin created successfully",
-      admin: {
-        id: admin._id,
-        fullName: `${admin.firstName} ${admin.lastName}`,
-        username: admin.username,
-        role: admin.role
-      }
+      admin: { id: admin._id, username: admin.username, role: admin.role }
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-
 exports.createStudent = async (req, res) => {
   try {
     const {
-      firstName,
-      // middleName,
-      lastName,
-      phoneNumber,
-      email,
-      grade,
-      gender,
-      classroom,
-      parentFirstName,
-      parentLastName,
-      parentPhoneNumber,
-      parentNationalId,
-      parentEmail
+      firstName, lastName, phoneNumber, email, grade, gender, classroom, subjects,
+      parentFirstName, parentLastName, parentPhoneNumber, parentNationalId, parentEmail
     } = req.body;
 
-    if (!firstName || !lastName || !parentFirstName || !parentLastName) {
-      return res.status(400).json({ message: "Student and Parent names are required" });
+    if (!firstName || !lastName || !parentNationalId) {
+      return res.status(400).json({ message: "Student names and Parent National ID are required" });
     }
 
-    let parent = await User.findOne({
-      nationalId: parentNationalId,
-      role: "parent"
-    });
-
+    let parent = await User.findOne({ nationalId: parentNationalId, role: "parent" });
     let generatedUsername = null;
     let generatedPassword = null;
 
     if (!parent) {
       generatedUsername = generateUsername(`${parentFirstName} ${parentLastName}`);
       generatedPassword = generatePassword();
-
 
       parent = await User.create({
         firstName: parentFirstName,
@@ -114,8 +87,9 @@ exports.createStudent = async (req, res) => {
       phoneNumber,
       email,
       grade,
-      classroom,
+      classroom, 
       gender,
+      subjects: subjects || [], 
       parent: parent._id
     });
 
@@ -123,31 +97,26 @@ exports.createStudent = async (req, res) => {
     await parent.save();
 
     res.status(201).json({
-      message: "Student created successfully",
+      message: "Student created and linked to parent successfully",
       student,
-      parentAccount: generatedUsername
-        ? "Parent account created and credentials sent"
-        : "Parent already exists"
+      parentStatus: generatedUsername ? "New parent account created" : "Linked to existing parent"
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-
-
 exports.createTeacher = async (req, res) => {
   try {
     const { firstName, lastName, phoneNumber, nationalId, email } = req.body;
 
-    if (!firstName || !lastName) {
-      return res.status(400).json({ message: "First and last name are required" });
+    if (!firstName || !lastName || !nationalId) {
+      return res.status(400).json({ message: "Names and National ID are required" });
     }
 
     const exists = await User.findOne({ nationalId });
     if (exists) {
-      return res.status(400).json({ message: "Teacher already exists" });
+      return res.status(400).json({ message: "Teacher with this National ID already exists" });
     }
 
     const username = generateUsername(`${firstName} ${lastName}`);
@@ -171,14 +140,8 @@ exports.createTeacher = async (req, res) => {
 
     res.status(201).json({
       message: "Teacher created successfully",
-      teacher: {
-        id: teacher._id,
-        fullName: `${teacher.firstName} ${teacher.lastName}`,
-        username: teacher.username,
-        role: teacher.role
-      }
+      teacher: { id: teacher._id, username: teacher.username }
     });
-
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
