@@ -1,18 +1,16 @@
 const express = require("express");
 const router = express.Router();
-
 const {
   addTimetableEntry,
   getTeacherTimetable,
   getParentTimetable
 } = require("../controllers/timetableController");
-
 const { protect, authorize } = require("../middleware/authMiddleware");
 
 router.post(
   "/",
   protect,
-  authorize("admin"),
+  authorize("admin", "teacher"), 
   addTimetableEntry
 );
 
@@ -29,4 +27,5 @@ router.get(
   authorize("parent"),
   getParentTimetable
 );
+
 module.exports = router;

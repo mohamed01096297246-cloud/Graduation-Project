@@ -44,16 +44,13 @@ exports.getTeacherTimetable = async (req, res) => {
 exports.getParentTimetable = async (req, res) => {
   try {
     const students = await Student.find({ parent: req.user._id });
-    
-    if (students.length === 0) {
-      return res.status(404).json({ message: "No students found for this parent" });
-    }
+    if (students.length === 0) return res.status(404).json({ message: "No students found" });
 
     const grades = [...new Set(students.map(s => s.grade))];
 
-    const timetable = await Timetable.find({
-      grade: { $in: grades }
-    }).sort({ day: 1, period: 1 });
+    const timetable = await Timetable.find({ grade: { $in: grades } })
+      .populate("teacher", "firstName lastName") 
+      .sort({ day: 1, period: 1 });
 
     res.json(timetable);
   } catch (err) {

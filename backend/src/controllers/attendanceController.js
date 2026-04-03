@@ -1,7 +1,7 @@
 const Attendance = require("../models/Attendance");
 const Student = require("../models/Student");
 const Notification = require("../models/Notification");
-
+const sendCredentialsEmail = require("../utils/emailService");
 
 exports.markAttendance = async (req, res) => {
   try {
@@ -16,15 +16,21 @@ exports.markAttendance = async (req, res) => {
       status,
       recordedBy: req.user._id 
     });
+
     if (status === "absent") {
-      const student = await Student.findById(studentId);
-      await Notification.create({
-        title: "تنبيه غياب",
-        message: `نحيطكم علماً بأن الطالب ${student.firstName} تم تسجيله غياب اليوم.`,
-        target: "parent",
-        parent: student.parent,
-        createdBy: req.user._id
-      });
+      const student = await Student.findById(studentId).populate("parent");
+
+      if (student && student.parent) {
+        await sendCredentialsEmail(student.parent.email, "تنبيه غياب", `نحيطكم علماً بأن ابنكم ${student.firstName} غائب اليوم.`);
+
+        await Notification.create({
+          title: "تنبيه غياب",
+          message: `نحيطكم علماً بأن الطالب ${student.firstName} تم تسجيله غياب اليوم.`,
+          target: "parent",
+          parent: student.parent._id, 
+          createdBy: req.user._id
+        });
+      }
     }
 
     res.status(201).json({

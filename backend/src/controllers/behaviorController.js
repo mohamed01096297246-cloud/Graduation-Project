@@ -1,11 +1,14 @@
 const Behavior = require("../models/Behavior");
 const Student = require("../models/Student");
+const Notification = require("../models/Notification");
+
 
 exports.addBehavior = async (req, res) => {
-  try { 
+  try {
     const { studentId, note, type } = req.body;
 
-    const student = await Student.findById(studentId);
+    const student = await Student.findById(studentId).populate("parent");
+    
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
     }
@@ -14,8 +17,19 @@ exports.addBehavior = async (req, res) => {
       student: studentId,
       teacher: req.user._id,
       type,
-      note
+      note,
+      date: new Date()
     });
+
+    if (student.parent) {
+      await Notification.create({
+        title: type === "negative" ? "تنبيه سلوكي" : "تشجيع سلوكي",
+        message: `تم تسجيل ملاحظة ${type === "negative" ? "سلبية" : "إيجابية"} للطالب ${student.firstName}: ${note}`,
+        target: "parent",
+        parent: student.parent._id,
+        createdBy: req.user._id
+      });
+    }
 
     res.status(201).json({
       message: "Behavior recorded successfully",
@@ -35,7 +49,7 @@ exports.getBehaviorForParent = async (req, res) => {
       student: { $in: studentIds }
     })
     .populate("student", "firstName lastName grade classroom") 
-    .sort({ createdAt: -1 }); 
+    .sort({ date: -1 }); 
 
     res.status(200).json(behaviors);
   } catch (err) {
