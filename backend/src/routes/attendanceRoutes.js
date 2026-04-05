@@ -1,12 +1,12 @@
 const express = require("express");
 const router = express.Router();
 
-const { markAttendance, getAttendanceForParent } = require("../controllers/attendanceController");
+const { markAttendance, getParentAttendance,getTeacherAttendance  } = require("../controllers/attendanceController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
 router.post("/", protect, authorize("teacher"), markAttendance);
 
-router.get("/parent", protect, authorize("parent"), getAttendanceForParent);
+router.get("/parent", protect, authorize("parent"), getParentAttendance);
 
 router.get(
   "/teacher",
