@@ -18,7 +18,6 @@ exports.createAdmin = async (req, res) => {
 
     const username = generateUsername(`${firstName} ${lastName}`);
     const plainPassword = generatePassword();
-
     const admin = await User.create({
       firstName,
       lastName,
@@ -121,6 +120,7 @@ exports.createTeacher = async (req, res) => {
 
     const username = generateUsername(`${firstName} ${lastName}`);
     const plainPassword = generatePassword();
+
 
     const teacher = await User.create({
       firstName,
