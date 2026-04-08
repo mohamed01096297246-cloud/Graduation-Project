@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduLink | لوحة تحكم الأدمن الشاملة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #0f172a; color: #f8fafc; }
+        
+        /* ألوان وتنسيقات الأزرار */
+        .btn { transition: all 0.3s ease; padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: bold; font-size: 0.875rem; text-align: center; cursor: pointer; border: none; }
+        .btn-blue { background-color: #2563eb; color: white; }
+        .btn-blue:hover { background-color: #1d4ed8; }
+        .btn-green { background-color: #059669; color: white; }
+        .btn-green:hover { background-color: #047857; }
+        .btn-purple { background-color: #7c3aed; color: white; }
+        .btn-purple:hover { background-color: #6d28d9; }
+        .btn-orange { background-color: #ea580c; color: white; }
+        .btn-orange:hover { background-color: #c2410c; }
+        .btn-dark { background-color: #334155; color: white; border: 1px solid #475569; }
+        .btn-dark:hover { background-color: #475569; }
+        
+        /* تنسيقات البطاقات (الكروت) */
+        .card { background-color: #1e293b; padding: 1.25rem; border-radius: 0.75rem; border: 1px solid #334155; margin-bottom: 1.5rem; box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3); }
+        
+        /* تنسيقات حقول الإدخال (المشكلة كانت هنا واتحلت) */
+        .input-field { width: 100%; background-color: #020617; border: 1px solid #334155; padding: 0.6rem; border-radius: 0.4rem; color: #f8fafc; margin-bottom: 0.75rem; font-size: 0.875rem; outline: none; }
+        .input-field:focus { border-color: #3b82f6; box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.5); }
+        .input-field::placeholder { color: #64748b; }
+        
+        /* شاشة عرض النتائج السوداء */
+        pre { direction: ltr; background-color: #000; padding: 0.75rem; border-radius: 0.5rem; color: #4ade80; font-size: 0.75rem; margin-top: 0.75rem; border: 1px solid #334155; max-height: 200px; overflow-y: auto; }
+        
+        .status-badge { padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold; }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="flex justify-between items-center mb-8 border-b border-slate-700 pb-6">
+            <div>
+                <h1 class="text-3xl font-bold text-blue-400">EduLink <span class="text-white">Admin Master Panel</span></h1>
+                <p class="text-slate-400 text-sm mt-1">اختبار الـ CRUD الشامل للنظام</p>
+            </div>
+            <div id="authStatus">
+                <span class="status-badge bg-red-900 text-red-200">غير متصل</span>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="card">
+                <h2 class="text-lg font-bold mb-3 text-blue-400">1. تسجيل الدخول</h2>
+                <input id="login_user" type="text" class="input-field" value="admin_master" placeholder="اسم المستخدم">
+                <input id="login_pass" type="password" class="input-field" value="adminPassword123" placeholder="كلمة السر">
+                <button onclick="testLogin()" class="btn btn-blue w-full">تسجيل دخول</button>
+                <pre id="res_login">...</pre>
+            </div>
+
+            <div class="card" style="border-top: 4px solid #059669;">
+                <h2 class="text-lg font-bold mb-3 text-emerald-400">2. إضافة مادة</h2>
+                <input id="sub_name" type="text" placeholder="اسم المادة" class="input-field" value="Science">
+                <input id="sub_code" type="text" placeholder="كود المادة" class="input-field" value="SCI101">
+                <button onclick="testCreateSubject()" class="btn btn-green w-full">حفظ المادة</button>
+                <pre id="res_subject">...</pre>
+            </div>
+
+            <div class="card" style="border-top: 4px solid #059669;">
+                <h2 class="text-lg font-bold mb-3 text-emerald-400">3. إضافة فصل</h2>
+                <input id="class_name" type="text" placeholder="اسم الفصل" class="input-field" value="1/A">
+                <input id="class_grade" type="text" placeholder="السنة الدراسية" class="input-field" value="Grade 1">
+                <button onclick="testCreateClass()" class="btn btn-green w-full">حفظ الفصل</button>
+                <pre id="res_class">...</pre>
+            </div>
+        </div>
+
+        <hr class="border-slate-700 my-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card" style="border-top: 4px solid #7c3aed;">
+                <h2 class="text-lg font-bold mb-3 text-purple-400">4. تسجيل معلم جديد</h2>
+                <div class="grid grid-cols-2 gap-2">
+                    <input id="t_fname" type="text" placeholder="الاسم الأول" class="input-field" value="Ahmed">
+                    <input id="t_lname" type="text" placeholder="الاسم الأخير" class="input-field" value="Ali">
+                </div>
+                <input id="t_nid" type="text" placeholder="الرقم القومي" class="input-field" value="29001010101010">
+                <input id="t_user" type="text" placeholder="اسم المستخدم (اختياري)" class="input-field" value="ahmed_teacher">
+                <input id="t_pass" type="text" placeholder="كلمة السر" class="input-field" value="teacher123">
+                <button onclick="testCreateTeacher()" class="btn btn-purple w-full">إنشاء حساب المعلم</button>
+                <pre id="res_teacher">...</pre>
+            </div>
+
+            <div class="card" style="border-top: 4px solid #7c3aed;">
+                <h2 class="text-lg font-bold mb-3 text-purple-400">5. تسجيل طالب وولي أمر</h2>
+                <p class="text-xs text-slate-400 mb-2">النظام سينشئ حساب لولي الأمر تلقائياً ويربطه بالطالب.</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <input id="s_fname" type="text" placeholder="اسم الطالب" class="input-field" value="Omar">
+                    <input id="s_lname" type="text" placeholder="اسم الأب (العائلة)" class="input-field" value="Khaled">
+                </div>
+                <input id="s_class" type="text" placeholder="ID الفصل (انسخه من نتيجة رقم 3)" class="input-field" style="border-color: #ea580c;" value="">
+                <input id="p_parent" type="text" placeholder="ID ولي الأمر (اتركه فارغ لإنشاء جديد)" class="input-field" value="">
+                <button onclick="testCreateStudent()" class="btn btn-purple w-full">إنشاء الطالب وولي الأمر</button>
+                <pre id="res_student">...</pre>
+            </div>
+        </div>
+
+        <hr class="border-slate-700 my-6">
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="card" style="border-top: 4px solid #ea580c;">
+                <h2 class="text-lg font-bold mb-3 text-orange-400">6. إنشاء جدول امتحان</h2>
+                <input id="ex_title" type="text" placeholder="عنوان الامتحان" class="input-field" value="Midterm Science">
+                <input id="ex_grade" type="text" placeholder="السنة الدراسية" class="input-field" value="Grade 1">
+                <input id="ex_date" type="date" class="input-field">
+                <button onclick="testCreateExam()" class="btn btn-orange w-full">حفظ الامتحان</button>
+                <pre id="res_exam">...</pre>
+            </div>
+
+            <div class="card" style="border-top: 4px solid #ea580c;">
+                <h2 class="text-lg font-bold mb-3 text-orange-400">7. إرسال إشعار</h2>
+                <input id="nt_title" type="text" placeholder="عنوان الإشعار" class="input-field" value="تنبيه هام جداً">
+                <input id="nt_msg" type="text" placeholder="نص الرسالة" class="input-field" value="يرجى العلم بأنه تم تحديد موعد الامتحانات.">
+                <select id="nt_target" class="input-field">
+                    <option value="all">إلى كل أولياء الأمور (All)</option>
+                    <option value="parent">لولي أمر محدد (Parent)</option>
+                </select>
+                <button onclick="testCreateNotification()" class="btn btn-orange w-full">إرسال الإشعار</button>
+                <pre id="res_notify">...</pre>
+            </div>
+        </div>
+
+        <div class="card" style="border-top: 4px solid #3b82f6; margin-top: 1.5rem;">
+            <h2 class="text-lg font-bold mb-3 text-blue-400">8. استعراض البيانات (READ / GET)</h2>
+            <div class="flex flex-wrap gap-3 mb-3">
+                <button onclick="apiCall('/classrooms', 'GET', null, 'res_getall')" class="btn btn-dark">عرض الفصول</button>
+                <button onclick="apiCall('/subjects', 'GET', null, 'res_getall')" class="btn btn-dark">عرض المواد</button>
+                <button onclick="apiCall('/students', 'GET', null, 'res_getall')" class="btn btn-dark">عرض الطلاب</button>
+                <button onclick="apiCall('/exams', 'GET', null, 'res_getall')" class="btn btn-dark">عرض الامتحانات</button>
+            </div>
+            <pre id="res_getall" style="max-height: 400px;">النتائج ستظهر هنا...</pre>
+        </div>
+
+    </div>
+
+    <script>
+        const API_URL = "http://localhost:5000/api";
+        let TOKEN = localStorage.getItem("admin_token") || "";
+
+        function updateUI() {
+            const status = document.getElementById("authStatus");
+            if(TOKEN) {
+                status.innerHTML = `<span class="status-badge" style="background-color: #064e3b; color: #34d399;">تم تسجيل الدخول ✓</span>`;
+            } else {
+                status.innerHTML = `<span class="status-badge" style="background-color: #7f1d1d; color: #fca5a5;">غير متصل</span>`;
+            }
+        }
+        updateUI();
+
+        async function apiCall(endpoint, method, body, resId) {
+            const resArea = document.getElementById(resId);
+            if(!TOKEN && endpoint !== '/auth/login') { 
+                resArea.innerText = "يجب تسجيل الدخول أولاً!"; 
+                return; 
+            }
+
+            resArea.innerText = "جاري التحميل...";
+
+            try {
+                const response = await fetch(`${API_URL}${endpoint}`, {
+                    method,
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${TOKEN}`
+                    },
+                    body: body ? JSON.stringify(body) : null
+                });
+                const data = await response.json();
+                resArea.innerText = JSON.stringify(data, null, 2);
+                return data;
+            } catch (err) {
+                resArea.innerText = "خطأ: " + err.message;
+            }
+        }
+
+        async function testLogin() {
+            const username = document.getElementById("login_user").value;
+            const password = document.getElementById("login_pass").value;
+            const data = await apiCall('/auth/login', 'POST', { username, password }, 'res_login');
+            if(data && data.token) {
+                TOKEN = data.token;
+                localStorage.setItem("admin_token", TOKEN);
+                updateUI();
+            }
+        }
+
+        function testCreateSubject() {
+            apiCall("/subjects", "POST", { 
+                name: document.getElementById("sub_name").value, 
+                code: document.getElementById("sub_code").value 
+            }, "res_subject");
+        }
+
+        function testCreateClass() {
+            apiCall("/classrooms", "POST", { 
+                name: document.getElementById("class_name").value, 
+                grade: document.getElementById("class_grade").value 
+            }, "res_class");
+        }
+
+        function testCreateTeacher() {
+            apiCall("/admin/teacher", "POST", { 
+                firstName: document.getElementById("t_fname").value,
+                lastName: document.getElementById("t_lname").value,
+                nationalId: document.getElementById("t_nid").value,
+                username: document.getElementById("t_user").value,
+                password: document.getElementById("t_pass").value,
+                role: "teacher"
+            }, "res_teacher");
+        }
+
+        function testCreateStudent() {
+            const classroomId = document.getElementById("s_class").value;
+            const parentId = document.getElementById("p_parent").value;
+            
+            if(!classroomId) {
+                document.getElementById("res_student").innerText = "خطأ: يرجى إدخال ID الفصل أولاً!";
+                return;
+            }
+
+            let payload = {
+                firstName: document.getElementById("s_fname").value,
+                lastName: document.getElementById("s_lname").value,
+                classroom: classroomId,
+                grade: "Grade 1",
+                gender: "male"
+            };
+
+            if(parentId) {
+                payload.parent = parentId;
+            } else {
+                payload.parentEmail = "parent@example.com";
+                payload.parentNationalId = "28001010101010";
+                payload.parentFirstName = document.getElementById("s_lname").value;
+                payload.parentLastName = "Family";
+            }
+
+            apiCall("/students", "POST", payload, "res_student");
+        }
+
+        function testCreateExam() {
+            apiCall("/exams", "POST", {
+                title: document.getElementById("ex_title").value,
+                grade: document.getElementById("ex_grade").value,
+                date: document.getElementById("ex_date").value || new Date().toISOString(),
+                subject: "Science",
+                totalMarks: 100
+            }, "res_exam");
+        }
+
+        function testCreateNotification() {
+            apiCall("/notifications", "POST", {
+                title: document.getElementById("nt_title").value,
+                message: document.getElementById("nt_msg").value,
+                target: document.getElementById("nt_target").value
+            }, "res_notify");
+        }
+    </script>
+</body>
+</html>

@@ -5,24 +5,24 @@ const attendanceSchema = new mongoose.Schema(
     student: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Student",
-      required: true
+      required: true,
     },
 
     date: {
       type: Date,
-      required: true
+      required: true,
     },
 
     status: {
       type: String,
       enum: ["present", "absent", "late"],
-      required: true
+      required: true,
     },
 
     recordedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true
+      required: true,
     }
   },
   { timestamps: true }

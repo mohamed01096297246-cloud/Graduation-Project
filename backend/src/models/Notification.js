@@ -3,12 +3,14 @@ const mongoose = require("mongoose");
 const notificationSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
 
   message: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
 
   target: {
@@ -28,5 +30,7 @@ const notificationSchema = new mongoose.Schema({
     ref: "User",
     required: true
   }
+
 }, { timestamps: true });
+
 module.exports = mongoose.model("Notification", notificationSchema);

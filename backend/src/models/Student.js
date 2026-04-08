@@ -1,57 +1,77 @@
 const mongoose = require("mongoose");
 
-const studentSchema = new mongoose.Schema({
-  firstName: {
-    type: String,
-    required: true
-  },
-  //  middleName: {
-  //   type: String,
-  //   required: true
-  // },
-   lastName: {
-    type: String,
-    required: true
-  },
+const studentSchema = new mongoose.Schema(
+  {
+    firstName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-  phoneNumber:{
-  type:String,
-  require:true
-  },
+    lastName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-  grade: {
-    type: String, 
-    required: true
-  },
+    phoneNumber: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-  email:{
-    type:String,
-    require:true
-  },
-  gender:{
-    type:String,
-    require:true
-  },
+    email: {
+      type: String,
+      trim: true,
+      lowercase: true,
+    },
 
-  classroom: {
-    type: String, 
-    required: true
+    gender: {
+      type: String,
+      enum: ["male", "female"],
+      required: true,
+    },
+
+    grade: {
+      type: String,
+      required: true,
+    },
+
+classroom: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Classroom",
+  required: true
+},
+
+parent: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User",
+  required: true
+},
+
+subjects: [
+{
+name:{
+          type: String,
+          required: true,
+        },
+
+        teacher: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+      },
+    ],
+
+    active: {
+      type: Boolean,
+      default: true,
+    },
   },
+  {
+    timestamps: true,
+  }
+);
 
-  parent: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User"//fk
-  },
-
-  subjects: [
-    {
-      name: String,
-      teacher: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User"//fk
-      }
-    }
-  ]
-});
-
-module.exports = mongoose.model("Student", studentSchema)
+module.exports = mongoose.model("Student", studentSchema);

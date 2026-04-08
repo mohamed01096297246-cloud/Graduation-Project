@@ -1,12 +1,14 @@
 const express = require("express");
 const router = express.Router();
-
-const { addBehavior, getBehaviorForParent } = require("../controllers/behaviorController");
+const behaviorController = require("../controllers/behaviorController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
+router.post("/", protect, authorize("teacher"), behaviorController.createBehavior);
 
-router.post("/", protect, authorize("teacher"), addBehavior);
+router.get("/", protect, authorize("teacher", "admin"), behaviorController.getAllBehavior);
 
-router.get("/parent", protect, authorize("parent"), getBehaviorForParent);
+router.get("/student/:studentId", protect, authorize("teacher", "admin", "parent"), behaviorController.getStudentBehavior);
+
+router.delete("/:id", protect, authorize("admin"), behaviorController.deleteBehavior);
 
 module.exports = router;

@@ -1,50 +1,85 @@
 const HomeworkResult = require("../models/HomeworkResult");
-const Student = require("../models/Student");
 
 exports.gradeHomework = async (req, res) => {
   try {
-    const { homeworkId, studentId, marks, feedback } = req.body;
+    const { homework, student, marks, feedback } = req.body;
 
-    const student = await Student.findById(studentId);
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
+    if (req.user.role !== 'teacher') {
+      return res.status(403).json({ message: "هذه الصلاحية للمعلمين فقط" });
+    }
+
+    const homeworkData = await Homework.findById(homework);
+    if (!homeworkData || homeworkData.teacher.toString() !== req.user.id) {
+      return res.status(403).json({ message: "لا يمكنك رصد درجات لواجب لم تقم بإنشائه" });
+    }
+
+    const studentData = await Student.findById(student);
+    if (!req.user.assignedClassrooms.includes(studentData.classroom)) {
+      return res.status(403).json({ message: "هذا الطالب ليس من ضمن فصولك المكلف بها" });
     }
 
     const result = await HomeworkResult.create({
-      homework: homeworkId,
-      student: studentId,
+      homework,
+      student,
       marks,
       feedback,
-      gradedBy: req.user._id
+      gradedBy: req.user.id
     });
 
-    res.status(201).json({
-      message: "Homework graded successfully",
-      result
-    });
+    res.status(201).json({ message: "تم رصد الدرجة بنجاح", result });
   } catch (err) {
     if (err.code === 11000) {
-      return res.status(400).json({
-        message: "This student has already been graded for this homework"
-      });
+      return res.status(400).json({ message: "تم رصد درجة لهذا الطالب في هذا الواجب مسبقاً" });
     }
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ message: err.message });
   }
 };
 
-exports.getParentHomeworkResults = async (req, res) => {
+exports.getStudentResults = async (req, res) => {
   try {
-    const students = await Student.find({ parent: req.user._id });
-    const ids = students.map(s => s._id);
+    const { studentId } = req.params;
 
-    const results = await HomeworkResult.find({
-      student: { $in: ids }
-    })
-    .populate("homework student")
-    .sort({ createdAt: -1 });
+    if (req.user.role === 'parent') {
+      const student = await Student.findById(studentId);
+      if (!student || student.parent.toString() !== req.user.id) {
+        return res.status(403).json({ message: "لا يمكنك رؤية نتائج طلاب آخرين" });
+      }
+    }
 
-    res.json(results);
+    const data = await HomeworkResult.find({ student: studentId })
+      .populate("homework", "title subject")
+      .populate("gradedBy", "firstName lastName");
+
+    res.json(data);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ message: err.message });
   }
+};
+
+exports.updateResult = async (req, res) => {
+  try {
+    const result = await HomeworkResult.findById(req.params.id);
+    if (!result) return res.status(404).json({ message: "النتيجة غير موجودة" });
+
+    if (req.user.role !== 'admin' && result.gradedBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: "غير مسموح لك بتعديل درجات رصدها مدرس آخر" });
+    }
+
+    const updated = await HomeworkResult.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    res.json(updated);
+  } catch (err) { res.status(400).json({ message: err.message }); }
+};
+
+exports.deleteResult = async (req, res) => {
+  try {
+    const result = await HomeworkResult.findById(req.params.id);
+    if (!result) return res.status(404).json({ message: "Not found" });
+
+    if (req.user.role !== 'admin' && result.gradedBy.toString() !== req.user.id) {
+      return res.status(403).json({ message: "غير مسموح لك بحذف هذه النتيجة" });
+    }
+
+    await result.deleteOne();
+    res.json({ message: "Deleted successfully" });
+  } catch (err) { res.status(500).json({ message: err.message }); }
 };

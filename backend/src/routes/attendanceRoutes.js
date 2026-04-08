@@ -1,17 +1,26 @@
 const express = require("express");
 const router = express.Router();
 
-const { markAttendance, getParentAttendance,getTeacherAttendance  } = require("../controllers/attendanceController");
+const {
+  createAttendance,
+  getAllAttendance,
+  getStudentAttendance,
+  updateAttendance,
+  deleteAttendance
+} = require("../controllers/attendanceController");
+
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-router.post("/", protect, authorize("teacher"), markAttendance);
 
-router.get("/parent", protect, authorize("parent"), getParentAttendance);
+router.post("/", protect, authorize("teacher"), createAttendance);
 
-router.get(
-  "/teacher",
-  protect,
-  authorize("teacher"),
-  getTeacherAttendance
-);
+router.get("/", protect, authorize("teacher", "admin"), getAllAttendance);
+
+
+router.get("/student/:studentId", protect, authorize("teacher", "admin", "parent"), getStudentAttendance);
+
+router.put("/:id", protect, authorize("teacher"), updateAttendance);
+
+router.delete("/:id", protect, authorize("teacher"), deleteAttendance);
+
 module.exports = router;

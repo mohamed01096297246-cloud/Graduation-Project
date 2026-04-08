@@ -1,146 +1,164 @@
-const sendCredentialsEmail = require("../utils/emailService");
-const { generateUsername, generatePassword } = require("../utils/generateCredentials");
-const Student = require("../models/Student");
+const bcrypt = require("bcrypt");
 const User = require("../models/User");
+const Student = require("../models/Student");
+const Schedule = require("../models/Schedule");
+const Attendance = require("../models/Attendance");
+const Notification = require("../models/Notification");
+const Result = require("../models/Result");
 
-exports.createAdmin = async (req, res) => {
+const mongoose = require("mongoose");
+
+exports.createSubAdmin = async (req, res) => {
   try {
-    const { firstName, lastName, phoneNumber, nationalId, email } = req.body;
-
-    if (!firstName || !lastName || !nationalId) {
-      return res.status(400).json({ message: "First name, last name, and National ID are required" });
+    if (req.user.role !== 'admin') {
+      return res.status(403).json({ message: "هذه الصلاحية للأدمن فقط" });
     }
 
-    const existingUser = await User.findOne({ nationalId });
-    if (existingUser) {
-      return res.status(400).json({ message: "User with this National ID already exists" });
-    }
+    const { firstName, lastName, nationalId, username, password } = req.body;
 
-    const username = generateUsername(`${firstName} ${lastName}`);
-    const plainPassword = generatePassword();
-    const admin = await User.create({
-      firstName,
-      lastName,
-      phoneNumber,
-      nationalId,
-      email,
+    const newAdmin = await User.create({
+      firstName, lastName, nationalId, username, password,
       role: "admin",
-      username,
-      password: plainPassword, 
       active: true
     });
 
-    if (email) {
-      await sendCredentialsEmail(email, username, plainPassword, "Admin");
-    }
-
-    res.status(201).json({
-      message: "Admin created successfully",
-      admin: { id: admin._id, username: admin.username, role: admin.role }
-    });
+    res.status(201).json({ message: "تم إضافة أدمن جديد بنجاح", admin: newAdmin.username });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 
-exports.createStudent = async (req, res) => {
+
+exports.getAdminDashboard = async (req, res) => {
   try {
-    const {
-      firstName, lastName, phoneNumber, email, grade, gender, classroom, subjects,
-      parentFirstName, parentLastName, parentPhoneNumber, parentNationalId, parentEmail
-    } = req.body;
+    const totalStudents = await Student.countDocuments();
+    const totalTeachers = await User.countDocuments({ role: "teacher" });
 
-    if (!firstName || !lastName || !parentNationalId) {
-      return res.status(400).json({ message: "Student names and Parent National ID are required" });
-    }
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    let parent = await User.findOne({ nationalId: parentNationalId, role: "parent" });
-    let generatedUsername = null;
-    let generatedPassword = null;
+    const attendanceToday = await Attendance.find({ date: { $gte: today } });
+    const present = attendanceToday.filter(a => a.status === "present").length;
+    const absent = attendanceToday.filter(a => a.status === "absent").length;
 
-    if (!parent) {
-      generatedUsername = generateUsername(`${parentFirstName} ${parentLastName}`);
-      generatedPassword = generatePassword();
+    const results = await Result.find().populate("student", "firstName lastName");
+    const studentScores = {};
 
-      parent = await User.create({
-        firstName: parentFirstName,
-        lastName: parentLastName,
-        phoneNumber: parentPhoneNumber,
-        nationalId: parentNationalId,
-        email: parentEmail,
-        role: "parent",
-        username: generatedUsername,
-        password: generatedPassword,
-        active: true,
-        linkedStudents: []
-      });
-
-      if (parentEmail) {
-        await sendCredentialsEmail(parentEmail, generatedUsername, generatedPassword, "Parent");
+    results.forEach(r => {
+      if (!r.student) return;
+      const id = r.student._id;
+      if (!studentScores[id]) {
+        studentScores[id] = { 
+          name: `${r.student.firstName} ${r.student.lastName}`, 
+          total: 0, count: 0 
+        };
       }
-    }
-
-    const student = await Student.create({
-      firstName,
-      lastName,
-      phoneNumber,
-      email,
-      grade,
-      classroom, 
-      gender,
-      subjects: subjects || [], 
-      parent: parent._id
+      studentScores[id].total += r.obtainedMarks; 
+      studentScores[id].count += 1;
     });
 
-    parent.linkedStudents.push(student._id);
-    await parent.save();
+    const topStudents = Object.values(studentScores)
+      .map(s => ({ name: s.name, avg: (s.total / s.count).toFixed(2) }))
+      .sort((a, b) => b.avg - a.avg)
+      .slice(0, 5);
 
-    res.status(201).json({
-      message: "Student created and linked to parent successfully",
-      student,
-      parentStatus: generatedUsername ? "New parent account created" : "Linked to existing parent"
+    res.json({
+      stats: { totalStudents, totalTeachers, present, absent },
+      topStudents,
+      latestNotifications: await Notification.find().sort({ createdAt: -1 }).limit(5)
+    });
+  } catch (err) { res.status(500).json({ message: err.message }); }
+};
+exports.deleteUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ message: "المستخدم غير موجود" });
+
+
+    if (user.username === "admin_master") {
+      return res.status(403).json({ message: "لا يمكن حذف الحساب الرئيسي للنظام" });
+    }
+
+
+    if (user.role === "parent") {
+
+      await Student.deleteMany({ parent: id });
+    } 
+    
+    if (user.role === "teacher") {
+    
+      await Schedule.deleteMany({ teacher: id });
+    }
+
+
+    await User.findByIdAndDelete(id);
+
+    res.json({ message: `تم حذف ${user.role} وجميع بياناته المرتبطة بنجاح` });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+exports.updateUser = async (req, res) => {
+  try {
+    const updates = req.body;
+    
+    if (updates.password) {
+      const salt = await bcrypt.genSalt(10);
+      updates.password = await bcrypt.hash(updates.password, salt);
+    }
+
+    const updatedUser = await User.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    ).select("-password"); 
+
+    if (!updatedUser) return res.status(404).json({ message: "المستخدم غير موجود" });
+
+    res.json({ message: "تم تحديث البيانات بنجاح", user: updatedUser });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+};
+
+exports.getAllUsers = async (req, res) => {
+  try {
+    const query = req.query.role ? { role: req.query.role } : {};
+    
+    const users = await User.find(query).select("-password").sort({ createdAt: -1 });
+    
+    res.status(200).json({
+      success: true,
+      count: users.length,
+      data: users
     });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-exports.createTeacher = async (req, res) => {
+
+exports.getUserById = async (req, res) => {
   try {
-    const { firstName, lastName, phoneNumber, nationalId, email } = req.body;
+    const { id } = req.params;
 
-    if (!firstName || !lastName || !nationalId) {
-      return res.status(400).json({ message: "Names and National ID are required" });
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "ID المستخدم غير صالح" });
     }
 
-    const exists = await User.findOne({ nationalId });
-    if (exists) {
-      return res.status(400).json({ message: "Teacher with this National ID already exists" });
+    const user = await User.findById(id).select("-password");
+    
+    if (!user) {
+      return res.status(404).json({ message: "المستخدم غير موجود" });
     }
 
-    const username = generateUsername(`${firstName} ${lastName}`);
-    const plainPassword = generatePassword();
-
-
-    const teacher = await User.create({
-      firstName,
-      lastName,
-      phoneNumber,
-      nationalId,
-      email,
-      role: "teacher",
-      username,
-      password: plainPassword,
-      active: true
-    });
-
-    if (email) {
-      await sendCredentialsEmail(email, username, plainPassword, "Teacher");
-    }
-
-    res.status(201).json({
-      message: "Teacher created successfully",
-      teacher: { id: teacher._id, username: teacher.username }
+    res.status(200).json({
+      success: true,
+      data: user
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

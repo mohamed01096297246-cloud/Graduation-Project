@@ -1,16 +1,18 @@
 const express = require("express");
 const router = express.Router();
-
-const { createAdmin, createStudent, createTeacher } = require("../controllers/adminController");
+const adminController = require("../controllers/adminController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-router.use(protect);
-router.use(authorize("admin"));
+router.use(protect, authorize("admin"));
 
-router.post("/create-admin", createAdmin);
+router.get("/dashboard", adminController.getAdminDashboard);
 
-router.post("/create-student", createStudent);
+router.get("/users", adminController.getAllUsers);
+router.get("/user/:id", adminController.getUserById);
 
-router.post("/create-teacher", createTeacher);
+router.post("/sub-admin", adminController.createSubAdmin);
+
+router.put("/user/:id", adminController.updateUser);
+router.delete("/user/:id", adminController.deleteUser);
 
 module.exports = router;

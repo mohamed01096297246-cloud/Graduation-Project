@@ -21,6 +21,12 @@ const examSchema = new mongoose.Schema({
     enum: ["midterm", "final"],
     required: true
   },
+  
+  createdBy: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "User"
+},
+
   totalMarks: {
     type: Number,
     required: true
