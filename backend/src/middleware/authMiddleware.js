@@ -49,7 +49,6 @@ exports.protect = async (req, res, next) => {
 };
 
 
-
 exports.authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user || !roles.includes(req.user.role)) {
@@ -60,4 +59,15 @@ exports.authorize = (...roles) => {
 
     next();
   };
+};
+
+
+exports.isSuperAdmin = (req, res, next) => {
+  if (req.user && req.user.username === "admin_master") {
+    next(); 
+  } else {
+    return res.status(403).json({ 
+      message: "عفواً، هذه الصلاحية للمدير الرئيسي (Super Admin) فقط ولا يحق لك تنفيذها." 
+    });
+  }
 };

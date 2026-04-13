@@ -1,72 +1,84 @@
-const Student = require("../models/Student");
-const User = require("../models/User");
-const Classroom = require("../models/Classroom");
 const mongoose = require("mongoose");
 const { generateUsername, generatePassword } = require("../utils/generateCredentials");
 const sendCredentialsEmail = require("../utils/emailService");
+const User = require("../models/User");
+const Student = require("../models/Student");
 
 exports.createStudent = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const {
-      firstName, lastName, phoneNumber, email, gender, grade, classroom, subjects,
-      parent, 
-      parentFirstName, parentLastName, parentNationalId, parentEmail
+      firstName, lastName, phoneNumber, email, gender, grade, 
+      parentFirstName, parentLastName, parentNationalId, parentEmail, parentPhone 
     } = req.body;
 
-    let finalParentId = parent;
-
-    if (!finalParentId) {
-      let existingParent = await User.findOne({ nationalId: parentNationalId });
-      
-      if (existingParent) {
-        finalParentId = existingParent._id;
-      } else {
-        const fullName = `${parentFirstName || firstName} ${parentLastName || lastName}`;
-        const generatedUser = generateUsername(fullName); 
-        const generatedPass = generatePassword();        
-
-        const newParent = await User.create({
-          firstName: parentFirstName || lastName,
-          lastName: parentLastName || "Family",
-          nationalId: parentNationalId || Date.now().toString(),
-          email: parentEmail,
-          role: "parent",
-          username: generatedUser,
-          password: generatedPass, 
-          active: true
-        });
-
-        finalParentId = newParent._id;
-
-        if (parentEmail) {
-          await sendCredentialsEmail(parentEmail, generatedUser, generatedPass, "ولي أمر");
-        }
-      }
-    } else {
-      const parentUser = await User.findById(finalParentId);
-      if (!parentUser || parentUser.role !== "parent") {
-        return res.status(400).json({ message: "ID ولي الأمر غير صحيح" });
-      }
+    if (!parentNationalId) {
+      throw new Error("الرقم القومي لولي الأمر مطلوب للتحقق من هويته");
     }
 
-    const student = await Student.create({
-      firstName, lastName, phoneNumber, email, gender, grade, 
-      classroom, parent: finalParentId, subjects
-    });
+    let finalParentId;
+    let isNewParent = false;
+    let generatedUser, generatedPass;
 
-    await User.findByIdAndUpdate(finalParentId, { $addToSet: { linkedStudents: student._id } });
-    if (classroom) {
-      await Classroom.findByIdAndUpdate(classroom, { $addToSet: { students: student._id } });
+    let existingParent = await User.findOne({ nationalId: parentNationalId, role: "parent" }).session(session);
+
+    if (existingParent) {
+      finalParentId = existingParent._id;
+    } else {
+      if (!parentPhone) {
+        throw new Error("رقم هاتف ولي الأمر مطلوب لإنشاء حساب جديد");
+      }
+
+      const fullName = `${parentFirstName || firstName} ${parentLastName || lastName}`;
+      generatedUser = generateUsername(fullName); 
+      generatedPass = generatePassword();        
+
+      const newParentResult = await User.create([{
+        firstName: parentFirstName || lastName,
+        lastName: parentLastName || "Family",
+        nationalId: parentNationalId,
+        phoneNumber: parentPhone,
+        email: parentEmail,
+        role: "parent",
+        username: generatedUser,
+        password: generatedPass, 
+        active: true
+      }], { session });
+
+      finalParentId = newParentResult[0]._id;
+      isNewParent = true;
+    }
+
+    const studentResult = await Student.create([{
+      firstName, lastName, phoneNumber, email, gender, grade, 
+      parent: finalParentId 
+    }], { session });
+
+    const student = studentResult[0];
+
+    await User.findByIdAndUpdate(finalParentId, { $addToSet: { linkedStudents: student._id } }, { session });
+    
+    await session.commitTransaction();
+    session.endSession();
+
+    if (isNewParent && parentEmail) {
+      await sendCredentialsEmail(parentEmail, generatedUser, generatedPass, "ولي أمر");
     }
 
     res.status(201).json({
       success: true,
-      message: "تم إنشاء الطالب وحساب ولي الأمر وإرسال البيانات بنجاح",
+      message: isNewParent 
+        ? "تم إنشاء الطالب وحساب ولي الأمر وإرسال بيانات الدخول بنجاح" 
+        : "تم إنشاء الطالب وربطه بحساب ولي الأمر الحالي بنجاح",
       data: student
     });
 
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    await session.abortTransaction();
+    session.endSession();
+    res.status(400).json({ error: err.message }); 
   }
 };
 
@@ -93,20 +105,11 @@ exports.updateStudent = async (req, res) => {
       await User.findByIdAndUpdate(req.body.parent, { $addToSet: { linkedStudents: student._id } });
     }
 
-    if (req.body.subjects) {
-      for (let subj of req.body.subjects) {
-        const teacher = await User.findById(subj.teacher);
-        if (!teacher || teacher.role !== "teacher") {
-          return res.status(400).json({ message: `Invalid teacher in subject: ${subj.name}` });
-        }
-      }
-    }
-
     const updatedStudent = await Student.findByIdAndUpdate(
       studentId,
       req.body,
       { new: true, runValidators: true }
-    ).populate("classroom parent"); 
+    ).populate("parent"); 
 
     res.status(200).json({
       success: true,
@@ -137,17 +140,12 @@ exports.deleteStudent = async (req, res) => {
       $pull: { linkedStudents: student._id }
     });
 
-    if (student.classroom) {
-      await Classroom.findByIdAndUpdate(student.classroom, {
-        $pull: { students: student._id }
-      });
-    }
 
     await student.deleteOne();
 
     res.status(200).json({
       success: true,
-      message: "تم حذف الطالب وتحديث بيانات الفصل وولي الأمر بنجاح"
+      message: "تم حذف الطالب وتحديث بيانات ولي الأمر بنجاح"
     });
 
   } catch (err) {
@@ -164,16 +162,14 @@ exports.getStudents = async (req, res) => {
       students = await Student.find()
         .populate("parent", "firstName lastName");
     }
-
     if (req.user.role === "teacher") {
-      students = await Student.find({
-        "subjects.teacher": req.user._id
-      });
+
+      students = []; 
     }
 
     res.status(200).json({
       success: true,
-      count: students.length,
+      count: students?.length || 0,
       data: students
     });
 
@@ -204,13 +200,7 @@ exports.getStudent = async (req, res) => {
     }
 
     if (req.user.role === "teacher") {
-      const isTeacher = student.subjects.some(
-        subj => subj.teacher.toString() === req.user._id.toString()
-      );
-
-      if (!isTeacher) {
-        return res.status(403).json({ message: "Access denied" });
-      }
+        return res.status(403).json({ message: "المعلم لا يملك صلاحية استعراض ملف الطالب مباشرة في هذا التحديث" });
     }
 
     res.status(200).json({
@@ -251,8 +241,3 @@ exports.getStudentsByParent = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
-
-
-
-
-

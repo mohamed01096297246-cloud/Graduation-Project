@@ -1,10 +1,11 @@
 const Subject = require("../models/Subject");
+const User = require("../models/User"); 
 
 exports.createSubject = async (req, res) => {
   try {
     const { name, code } = req.body;
     
-    const existingSubject = await Subject.findOne({ code });
+    const existingSubject = await Subject.findOne({ code: code.trim().toUpperCase() });
     if (existingSubject) {
       return res.status(400).json({ message: "كود هذه المادة مسجل مسبقاً" });
     }
@@ -37,11 +38,22 @@ exports.getSubjectById = async (req, res) => {
 
 exports.updateSubject = async (req, res) => {
   try {
+    if (req.body.code) {
+      const existingSubject = await Subject.findOne({ 
+        code: req.body.code.trim().toUpperCase(), 
+        _id: { $ne: req.params.id } 
+      });
+      if (existingSubject) {
+        return res.status(400).json({ message: "كود هذه المادة مسجل مسبقاً لمادة أخرى" });
+      }
+    }
+
     const subject = await Subject.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
     );
+    
     if (!subject) return res.status(404).json({ message: "المادة غير موجودة" });
     res.json({ message: "تم تحديث المادة بنجاح", subject });
   } catch (err) {
@@ -51,8 +63,18 @@ exports.updateSubject = async (req, res) => {
 
 exports.deleteSubject = async (req, res) => {
   try {
-    const subject = await Subject.findByIdAndDelete(req.params.id);
+    const subject = await Subject.findById(req.params.id);
     if (!subject) return res.status(404).json({ message: "المادة غير موجودة" });
+
+    const teachersCount = await User.countDocuments({ role: "teacher", subject: subject._id });
+    
+    if (teachersCount > 0) {
+      return res.status(400).json({ 
+        message: "لا يمكن حذف المادة لارتباطها بمعلمين في النظام. الرجاء تغيير مادة المعلمين أولاً." 
+      });
+    }
+
+    await subject.deleteOne();
     res.json({ message: "تم حذف المادة بنجاح" });
   } catch (err) {
     res.status(500).json({ error: err.message });

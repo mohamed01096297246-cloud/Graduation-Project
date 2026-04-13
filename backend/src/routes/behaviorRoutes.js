@@ -9,6 +9,6 @@ router.get("/", protect, authorize("teacher", "admin"), behaviorController.getAl
 
 router.get("/student/:studentId", protect, authorize("teacher", "admin", "parent"), behaviorController.getStudentBehavior);
 
-router.delete("/:id", protect, authorize("admin"), behaviorController.deleteBehavior);
+router.delete("/:id", protect, authorize("admin","teacher"), behaviorController.deleteBehavior);
 
 module.exports = router;

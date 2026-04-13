@@ -1,4 +1,6 @@
 const Behavior = require("../models/Behavior");
+const Student = require("../models/Student");
+const Schedule = require("../models/Schedule");
 
 const timeToMinutes = (timeStr) => {
   const [hours, minutes] = timeStr.split(":").map(Number);

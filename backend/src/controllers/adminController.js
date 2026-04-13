@@ -4,20 +4,21 @@ const Student = require("../models/Student");
 const Schedule = require("../models/Schedule");
 const Attendance = require("../models/Attendance");
 const Notification = require("../models/Notification");
-const Result = require("../models/Result");
+const { generateUsername, generatePassword } = require("../utils/generateCredentials");
+
 
 const mongoose = require("mongoose");
 
 exports.createSubAdmin = async (req, res) => {
   try {
-    if (req.user.role !== 'admin') {
-      return res.status(403).json({ message: "هذه الصلاحية للأدمن فقط" });
-    }
 
-    const { firstName, lastName, nationalId, username, password } = req.body;
+    const { firstName, lastName, nationalId,phoneNumber,email, } = req.body;
+
+    const username = generateUsername(`${firstName} ${lastName}`);
+    const password = generatePassword(); 
 
     const newAdmin = await User.create({
-      firstName, lastName, nationalId, username, password,
+      firstName, lastName, nationalId, username, password,phoneNumber,email,
       role: "admin",
       active: true
     });
@@ -41,30 +42,8 @@ exports.getAdminDashboard = async (req, res) => {
     const present = attendanceToday.filter(a => a.status === "present").length;
     const absent = attendanceToday.filter(a => a.status === "absent").length;
 
-    const results = await Result.find().populate("student", "firstName lastName");
-    const studentScores = {};
-
-    results.forEach(r => {
-      if (!r.student) return;
-      const id = r.student._id;
-      if (!studentScores[id]) {
-        studentScores[id] = { 
-          name: `${r.student.firstName} ${r.student.lastName}`, 
-          total: 0, count: 0 
-        };
-      }
-      studentScores[id].total += r.obtainedMarks; 
-      studentScores[id].count += 1;
-    });
-
-    const topStudents = Object.values(studentScores)
-      .map(s => ({ name: s.name, avg: (s.total / s.count).toFixed(2) }))
-      .sort((a, b) => b.avg - a.avg)
-      .slice(0, 5);
-
     res.json({
       stats: { totalStudents, totalTeachers, present, absent },
-      topStudents,
       latestNotifications: await Notification.find().sort({ createdAt: -1 }).limit(5)
     });
   } catch (err) { res.status(500).json({ message: err.message }); }

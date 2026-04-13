@@ -37,32 +37,11 @@ const studentSchema = new mongoose.Schema(
       required: true,
     },
 
-classroom: {
-  type: mongoose.Schema.Types.ObjectId,
-  ref: "Classroom",
-  required: true
-},
-
 parent: {
   type: mongoose.Schema.Types.ObjectId,
   ref: "User",
   required: true
 },
-
-subjects: [
-{
-name:{
-          type: String,
-          required: true,
-        },
-
-        teacher: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
-          required: true,
-        },
-      },
-    ],
 
     active: {
       type: Boolean,

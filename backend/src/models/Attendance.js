@@ -18,6 +18,11 @@ const attendanceSchema = new mongoose.Schema(
       enum: ["present", "absent", "late"],
       required: true,
     },
+schedule: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Schedule",
+  required: true,
+},
 
     recordedBy: {
       type: mongoose.Schema.Types.ObjectId,

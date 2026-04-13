@@ -10,7 +10,6 @@ exports.login = async (req, res) => {
       return res.status(400).json({ message: "اسم المستخدم وكلمة المرور مطلوبان" });
     }
 
-    // 💡 التعديل السحري هنا: ضفنا .select('+password')
     const user = await User.findOne({ username: username.trim() }).select('+password');
 
     if (!user) {
@@ -21,7 +20,6 @@ exports.login = async (req, res) => {
       return res.status(403).json({ message: "هذا الحساب معطل حالياً، راجع الإدارة" });
     }
 
-    // دلوقتي user.password مش هتبقى undefined وهتتقارن صح
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {

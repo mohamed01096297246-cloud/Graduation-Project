@@ -61,7 +61,7 @@ exports.updateResult = async (req, res) => {
     const result = await HomeworkResult.findById(req.params.id);
     if (!result) return res.status(404).json({ message: "النتيجة غير موجودة" });
 
-    if (req.user.role !== 'admin' && result.gradedBy.toString() !== req.user.id) {
+    if (req.user.role !== 'teacher' && result.gradedBy.toString() !== req.user.id) {
       return res.status(403).json({ message: "غير مسموح لك بتعديل درجات رصدها مدرس آخر" });
     }
 
@@ -75,7 +75,7 @@ exports.deleteResult = async (req, res) => {
     const result = await HomeworkResult.findById(req.params.id);
     if (!result) return res.status(404).json({ message: "Not found" });
 
-    if (req.user.role !== 'admin' && result.gradedBy.toString() !== req.user.id) {
+    if (req.user.role !== 'teacher' && result.gradedBy.toString() !== req.user.id) {
       return res.status(403).json({ message: "غير مسموح لك بحذف هذه النتيجة" });
     }
 

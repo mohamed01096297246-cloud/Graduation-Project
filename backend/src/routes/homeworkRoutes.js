@@ -6,19 +6,19 @@ const {
   getAllHomework,
   getHomework,
   updateHomework,
-  deleteHomework
+  deleteHomework,
 } = require("../controllers/homeworkController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-router.post("/", protect, authorize("teacher", "admin"), createHomework);
+router.post("/", protect, authorize("teacher"), createHomework);
 
 router.get("/", protect, authorize("teacher", "admin", "parent"), getAllHomework);
 
 router.get("/:id", protect, authorize("teacher", "admin", "parent"), getHomework);
 
-router.put("/:id", protect, authorize("teacher", "admin"), updateHomework);
+router.put("/:id", protect, authorize("teacher"), updateHomework);
 
-router.delete("/:id", protect, authorize("admin"), deleteHomework);
+router.delete("/:id", protect, authorize("teacher"), deleteHomework);
 
 module.exports = router;

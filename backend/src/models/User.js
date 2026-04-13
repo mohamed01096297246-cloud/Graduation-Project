@@ -31,6 +31,17 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "teacher", "parent"],
       default: "parent",
     },
+    subject: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject", 
+    },
+    teachingGrades: [
+      {
+        type: String, 
+        trim: true,
+      }
+    ],
+
 
     username: {
       type: String,
@@ -43,7 +54,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
       minlength: 6,
-      select: false, 
+      select: true, 
     },
 
     linkedStudents: [

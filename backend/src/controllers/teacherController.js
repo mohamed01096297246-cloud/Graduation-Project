@@ -1,20 +1,26 @@
 const User = require("../models/User");
+const Subject = require("../models/Subject"); 
 const Schedule = require("../models/Schedule");
 const Attendance = require("../models/Attendance");
 const Homework = require("../models/Homework");
 const sendCredentialsEmail = require("../utils/emailService");
 const { generateUsername, generatePassword } = require("../utils/generateCredentials");
 
-
 const timeToMinutes = (time) => {
   const [h, m] = time.split(":").map(Number);
   return h * 60 + m;
 };
 
-
 exports.createTeacher = async (req, res) => {
   try {
-    const { firstName, lastName, phoneNumber, nationalId, email, subject, assignedClassrooms } = req.body;
+  
+    const { firstName, lastName, phoneNumber, nationalId, email, subjectId, teachingGrades } = req.body;
+
+
+    const existingSubject = await Subject.findById(subjectId);
+    if (!existingSubject) {
+      return res.status(400).json({ message: "المادة الدراسية المختارة غير موجودة في النظام" });
+    }
 
     const username = generateUsername(`${firstName} ${lastName}`);
     const password = generatePassword(); 
@@ -22,16 +28,29 @@ exports.createTeacher = async (req, res) => {
     const teacher = await User.create({
       firstName, lastName, phoneNumber, nationalId, email,
       role: "teacher",
-      subject, 
-      assignedClassrooms, 
+      subject: subjectId, 
+      teachingGrades,    
       username, password,
       active: true
     });
 
     if (email) await sendCredentialsEmail(email, username, password, "Teacher");
-    res.status(201).json({ message: "Teacher created", teacher });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+    
+    res.status(201).json({ 
+      message: "تم إنشاء حساب المعلم بنجاح", 
+      teacher: {
+        id: teacher._id,
+        name: `${teacher.firstName} ${teacher.lastName}`,
+        username: teacher.username,
+        teachingGrades: teacher.teachingGrades
+      }
+    });
+  } catch (err) { 
+    res.status(500).json({ error: err.message }); 
+  }
 };
+
+
 
 exports.getTeacherDashboard = async (req, res) => {
   try {

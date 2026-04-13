@@ -14,6 +14,16 @@ const behaviorSchema = new mongoose.Schema(
       required: true,
     },
 
+subject: {
+  type: String,
+  required: true,
+},
+
+date: {
+  type: Date,
+  default: Date.now,
+},
+
     type: {
       type: String,
       enum: ["positive", "negative", "neutral"],

@@ -4,17 +4,14 @@ const helmet = require("helmet");
 const compression = require("compression");
 require("dotenv").config();
 
-// استيراد الميدل وير الخاص بالأخطاء (اختياري لو حابب تفصله)
 const app = express();
 
-// ================= 🔐 SECURITY & MIDDLEWARES =================
 
-app.use(helmet()); // لتأمين الـ HTTP Headers
-app.use(cors()); // للسماح للـ Frontend بالاتصال بالسيرفر
-app.use(compression()); // لضغط البيانات وتسريع الاستجابة
-app.use(express.json()); // لتحليل بيانات الـ JSON في الـ Request Body
+app.use(helmet()); 
+app.use(cors()); 
+app.use(compression()); 
+app.use(express.json()); 
 
-// 📌 Logger لمتابعة الطلبات أثناء البرمجة
 if (process.env.NODE_ENV === "development") {
   app.use((req, res, next) => {
     console.log(`[${new Date().toLocaleString()}] ${req.method} ${req.originalUrl}`);
@@ -22,14 +19,13 @@ if (process.env.NODE_ENV === "development") {
   });
 }
 
-// ================= 📂 IMPORT ROUTES =================
 
 const authRoutes = require("./src/routes/authRoutes");
 const adminRoutes = require("./src/routes/adminRoutes");
 const teacherRoutes = require("./src/routes/teacherRoutes");
 const parentRoutes = require("./src/routes/parentRoutes");
 const studentRoutes = require("./src/routes/studentRoutes");
-const classroomRoutes = require("./src/routes/classroomRoutes"); // تم توحيد الاسم هنا
+const classroomRoutes = require("./src/routes/classroomRoutes"); 
 const subjectRoutes = require("./src/routes/subjectRoutes");
 const scheduleRoutes = require("./src/routes/scheduleRoutes");
 const attendanceRoutes = require("./src/routes/attendanceRoutes");
@@ -40,7 +36,6 @@ const resultRoutes = require("./src/routes/resultRoutes");
 const homeworkResultRoutes = require("./src/routes/homeworkResultRoutes");
 const notificationRoutes = require("./src/routes/notificationRoutes");
 
-// ================= 🧠 MOUNT ROUTES =================
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
@@ -58,7 +53,6 @@ app.use("/api/results", resultRoutes);
 app.use("/api/homework-results", homeworkResultRoutes);
 app.use("/api/notifications", notificationRoutes);
 
-// ================= 🚀 ROOT ROUTE =================
 
 app.get("/", (req, res) => {
   res.status(200).json({
@@ -69,7 +63,6 @@ app.get("/", (req, res) => {
   });
 });
 
-// ================= 🚫 404 NOT FOUND =================
 
 app.use((req, res) => {
   res.status(404).json({
@@ -78,7 +71,6 @@ app.use((req, res) => {
   });
 });
 
-// ================= 🔥 GLOBAL ERROR HANDLER =================
 
 app.use((err, req, res, next) => {
   console.error("Critical Error:", err.stack);
@@ -87,7 +79,6 @@ app.use((err, req, res, next) => {
   res.status(statusCode).json({
     success: false,
     message: err.message || "Internal Server Error",
-    // السطر ده بيظهر تفاصيل الخطأ للمبرمج فقط في مرحلة الـ Development
     stack: process.env.NODE_ENV === "development" ? err.stack : undefined
   });
 });

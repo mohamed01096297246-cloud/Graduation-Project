@@ -10,12 +10,12 @@ const {
 
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-router.post("/", protect, authorize("teacher", "admin"), gradeHomework);
+router.post("/", protect, authorize("teacher"), gradeHomework);
 
 router.get("/student/:studentId", protect, authorize("teacher", "admin", "parent"), getStudentResults);
 
-router.put("/:id", protect, authorize("teacher", "admin"), updateResult);
+router.put("/:id", protect, authorize("teacher"), updateResult);
 
-router.delete("/:id", protect, authorize("admin"), deleteResult);
+router.delete("/:id", protect, authorize("teacher"), deleteResult);
 
 module.exports = router;
