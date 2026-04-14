@@ -3,14 +3,19 @@ const User = require("../models/User");
 
 exports.createSubject = async (req, res) => {
   try {
-    const { name, code } = req.body;
+    const { name, code, grade } = req.body;
     
-    const existingSubject = await Subject.findOne({ code: code.trim().toUpperCase() });
-    if (existingSubject) {
+    const existingCode = await Subject.findOne({ code: code.trim().toUpperCase() });
+    if (existingCode) {
       return res.status(400).json({ message: "كود هذه المادة مسجل مسبقاً" });
     }
 
-    const subject = await Subject.create({ name, code });
+    const existingNameInGrade = await Subject.findOne({ name, grade });
+    if (existingNameInGrade) {
+      return res.status(400).json({ message: `مادة (${name}) مسجلة بالفعل لـ (${grade})` });
+    }
+
+    const subject = await Subject.create({ name, code, grade });
     res.status(201).json({ message: "تم إضافة المادة بنجاح", subject });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -19,18 +24,13 @@ exports.createSubject = async (req, res) => {
 
 exports.getAllSubjects = async (req, res) => {
   try {
-    const subjects = await Subject.find().sort({ name: 1 });
-    res.json(subjects);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
+    let filter = {};
+    if (req.query.grade) {
+      filter.grade = req.query.grade;
+    }
 
-exports.getSubjectById = async (req, res) => {
-  try {
-    const subject = await Subject.findById(req.params.id);
-    if (!subject) return res.status(404).json({ message: "المادة غير موجودة" });
-    res.json(subject);
+    const subjects = await Subject.find(filter).sort({ grade: 1, name: 1 });
+    res.json(subjects);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -38,13 +38,15 @@ exports.getSubjectById = async (req, res) => {
 
 exports.updateSubject = async (req, res) => {
   try {
-    if (req.body.code) {
-      const existingSubject = await Subject.findOne({ 
-        code: req.body.code.trim().toUpperCase(), 
-        _id: { $ne: req.params.id } 
-      });
-      if (existingSubject) {
-        return res.status(400).json({ message: "كود هذه المادة مسجل مسبقاً لمادة أخرى" });
+    const { name, code, grade } = req.body;
+
+    if (code || (name && grade)) {
+      const query = { _id: { $ne: req.params.id } };
+      if (code) query.code = code.trim().toUpperCase();
+      
+      const conflict = await Subject.findOne(query);
+      if (conflict) {
+        return res.status(400).json({ message: "البيانات الجديدة تتعارض مع مادة موجودة بالفعل" });
       }
     }
 

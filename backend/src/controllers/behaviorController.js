@@ -42,7 +42,7 @@ exports.createBehavior = async (req, res) => {
       teacher: req.user.id,
       type, 
       note,
-      subject: activeClass.subject, // السيرفر بيسحب المادة أوتوماتيك من الحصة
+      subject: activeClass.subject, 
       date: new Date()
     });
 
@@ -55,16 +55,14 @@ exports.createBehavior = async (req, res) => {
 exports.getAllBehavior = async (req, res) => {
   try {
     let filter = {};
-    // لو اللي بيطلب مدرس، نجيبله السلوك اللي هو بس كتبه
     if (req.user.role === 'teacher') {
       filter = { teacher: req.user.id };
     }
 
     const data = await Behavior.find(filter)
       .populate("student", "firstName lastName")
-      .populate("teacher", "firstName lastName") // 🔥 تعديل الـ Name
-      .populate("subject", "name") // 🔥 جلب اسم المادة
-      .sort({ createdAt: -1 });
+      .populate("teacher", "firstName lastName") 
+      .populate("subject", "name") 
 
     res.json({ success: true, count: data.length, data });
   } catch (err) {
@@ -76,7 +74,6 @@ exports.getStudentBehavior = async (req, res) => {
   try {
     const { studentId } = req.params;
 
-    // 🔥 حماية ولي الأمر: لا يرى سوى أبنائه
     const student = await Student.findById(studentId);
     if (!student) return res.status(404).json({ message: "الطالب غير موجود" });
 
@@ -100,7 +97,6 @@ exports.deleteBehavior = async (req, res) => {
     const behavior = await Behavior.findById(req.params.id);
     if (!behavior) return res.status(404).json({ message: "سجل السلوك غير موجود" });
 
-    // 🔥 حماية: المدرس يقدر يمسح السجل اللي هو عمله بس، والأدمن يمسح أي حاجة
     if (req.user.role === 'teacher' && behavior.teacher.toString() !== req.user.id) {
       return res.status(403).json({ message: "لا يمكنك حذف تقييم سلوكي كتبه معلم آخر" });
     }

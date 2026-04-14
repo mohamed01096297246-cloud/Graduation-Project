@@ -12,7 +12,6 @@ const behaviorSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    // 🔥 تم الربط بجدول المواد الفعلي
     subject: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subject",

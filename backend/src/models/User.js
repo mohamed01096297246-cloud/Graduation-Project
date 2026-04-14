@@ -34,7 +34,8 @@ const userSchema = new mongoose.Schema(
     
     subject: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Subject", 
+      ref: "Subject",
+      default: null 
     },
     teachingGrades: [
       {
@@ -42,8 +43,6 @@ const userSchema = new mongoose.Schema(
         trim: true,
       }
     ],
-
-
     username: {
       type: String,
       unique: true,

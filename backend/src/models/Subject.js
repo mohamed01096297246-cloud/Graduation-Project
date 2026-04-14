@@ -12,7 +12,14 @@ const subjectSchema = new mongoose.Schema({
     unique: true,
     trim: true,
     uppercase: true 
+  },
+  grade: {
+    type: String,
+    required: [true, "المرحلة الدراسية للمادة مطلوبة"],
+    trim: true
   }
 }, { timestamps: true });
+
+subjectSchema.index({ name: 1, grade: 1 }, { unique: true });
 
 module.exports = mongoose.model("Subject", subjectSchema);

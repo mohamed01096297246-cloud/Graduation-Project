@@ -20,26 +20,23 @@ const homeworkSchema = new mongoose.Schema(
       type: Date,
       required: [true, "تاريخ آخر موعد للتسليم مطلوب"]
     },
-    // 🔥 السحر هنا: الواجب مربوط بالفصل كله
     classroom: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Classroom",
       required: true
     },
-    // المدرس اللي عمل الواجب
     teacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true
     },
-    // المادة (هنسحبها أوتوماتيك من المدرس)
     subject: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subject",
       required: true
     }
   },
-  { timestamps: true } // دي بتعمل حقل createdAt (تاريخ اليوم) وحقل updatedAt لوحدها
+  { timestamps: true } 
 );
 
 module.exports = mongoose.model("Homework", homeworkSchema);

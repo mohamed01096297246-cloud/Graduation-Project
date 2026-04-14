@@ -77,28 +77,33 @@ exports.createStudent = async (req, res) => {
 
     await User.findByIdAndUpdate(finalParentId, { $addToSet: { linkedStudents: student._id } }, { session });
     
+    if (isNewParent && parentEmail) {
+      try {
+        await sendCredentialsEmail(parentEmail, generatedUser, generatedPass, "ولي أمر");
+      } catch (emailErr) {
+        throw new Error("تعذر إرسال بيانات الدخول لولي الأمر. تم إلغاء عملية تسجيل الطالب. السبب: " + emailErr.message);
+      }
+    }
+
     await session.commitTransaction();
     session.endSession();
-
-    if (isNewParent && parentEmail) {
-      await sendCredentialsEmail(parentEmail, generatedUser, generatedPass, "ولي أمر");
-    }
 
     res.status(201).json({
       success: true,
       message: isNewParent 
-        ? `تم إنشاء الطالب وتوزيعه تلقائياً على فصل (${availableClassroom.name}) وإرسال بيانات دخول الأب.` 
+        ? `تم إنشاء الطالب وتوزيعه تلقائياً على فصل (${availableClassroom.name}) وإرسال بيانات الدخول للأب بنجاح.` 
         : `تم إنشاء الطالب وتوزيعه على فصل (${availableClassroom.name}) وربطه بحساب ولي الأمر الحالي.`,
       data: student
     });
 
   } catch (err) {
-    await session.abortTransaction();
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     session.endSession();
     res.status(400).json({ error: err.message }); 
   }
 };
-
 
 exports.updateStudent = async (req, res) => {
   try {
@@ -173,20 +178,28 @@ exports.deleteStudent = async (req, res) => {
 
 exports.getStudents = async (req, res) => {
   try {
-    let students;
+    let students = [];
+    const { classroomId } = req.query; 
 
     if (req.user.role === "admin") {
-      students = await Student.find()
-        .populate("parent", "firstName lastName");
-    }
-    if (req.user.role === "teacher") {
 
-      students = []; 
+      let filter = {};
+      if (classroomId) filter.classroom = classroomId;
+      students = await Student.find(filter).populate("parent", "firstName lastName");
+    } 
+    
+    else if (req.user.role === "teacher") {
+      if (!classroomId) {
+        return res.status(400).json({ message: "برجاء تحديد الفصل أولاً لعرض قائمة الطلاب." });
+      }
+      
+      students = await Student.find({ classroom: classroomId })
+        .select("firstName lastName gender active"); 
     }
 
     res.status(200).json({
       success: true,
-      count: students?.length || 0,
+      count: students.length,
       data: students
     });
 

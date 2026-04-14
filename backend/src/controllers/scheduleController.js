@@ -18,16 +18,33 @@ exports.createSchedule = async (req, res) => {
         message: `تعارض إداري: هذا المعلم غير مصرح له بتدريس المستوى الدراسي (${classroomData.grade}) الخاص بهذا الفصل.` 
       });
     }
+    const [newStartH, newStartM] = startTime.split(":").map(Number);
+    const [newEndH, newEndM] = endTime.split(":").map(Number);
+    const newStartMinutes = newStartH * 60 + newStartM;
+    const newEndMinutes = newEndH * 60 + newEndM;
 
-    const conflict = await Schedule.findOne({
+    if (newEndMinutes <= newStartMinutes) {
+      return res.status(400).json({ message: "وقت النهاية يجب أن يكون بعد وقت البداية" });
+    }
+
+    const existingSchedules = await Schedule.find({
       day,
-      startTime, 
       $or: [{ teacher }, { classroom }]
     });
 
-    if (conflict) {
+    const hasConflict = existingSchedules.some(sch => {
+      const [exStartH, exStartM] = sch.startTime.split(":").map(Number);
+      const [exEndH, exEndM] = sch.endTime.split(":").map(Number);
+      const exStartMinutes = exStartH * 60 + exStartM;
+      const exEndMinutes = exEndH * 60 + exEndM;
+
+
+      return (newStartMinutes < exEndMinutes) && (newEndMinutes > exStartMinutes);
+    });
+
+    if (hasConflict) {
       return res.status(400).json({ 
-        message: "يوجد تعارض! إما المدرس مرتبط بحصة أخرى أو الفصل مشغول في هذا الوقت." 
+        message: "يوجد تعارض زمني! إما المدرس لديه حصة أخرى متداخلة، أو الفصل مشغول في هذا الوقت." 
       });
     }
 

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduLink | لوحة اختبار الأدمن (V5 - شاملة الامتحانات)</title>
+    <title>EduLink | لوحة اختبار الأدمن (V6 - Smart Logic)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -36,7 +36,7 @@
         <header class="flex justify-between items-center mb-8 border-b border-slate-700 pb-6">
             <div>
                 <h1 class="text-3xl font-bold text-blue-400">EduLink <span class="text-white">Admin Tester</span></h1>
-                <p class="text-slate-400 text-sm mt-1">اختبار المعمارية الحديثة (مضاف إليها جدول الامتحانات)</p>
+                <p class="text-slate-400 text-sm mt-1">اختبار المعمارية الذكية (التوزيع التلقائي ومنع التداخل)</p>
             </div>
             <div id="authStatus">
                 <span class="status-badge bg-red-900 text-red-200">غير متصل</span>
@@ -46,7 +46,7 @@
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div class="card">
                 <h2 class="text-lg font-bold mb-3 text-blue-400">1. تسجيل الدخول</h2>
-                <input id="login_user" type="text" class="input-field" placeholder="اسم المستخدم">
+                <input id="login_user" type="text" class="input-field" placeholder="اسم المستخدم (الأدمن)">
                 <input id="login_pass" type="password" class="input-field" placeholder="كلمة السر">
                 <button onclick="testLogin()" class="btn btn-blue w-full">تسجيل دخول</button>
                 <pre id="res_login">...</pre>
@@ -61,14 +61,15 @@
             </div>
 
             <div class="card" style="border-top: 4px solid #059669;">
-                <h2 class="text-lg font-bold mb-3 text-emerald-400">3. إضافة فصل (Homeroom)</h2>
+                <h2 class="text-lg font-bold mb-3 text-emerald-400">3. إضافة فصل (محدث بالـ Capacity)</h2>
                 <input id="class_name" type="text" placeholder="اسم الفصل (مثال: 1/أ)" class="input-field">
                 <input id="class_grade" type="text" placeholder="المستوى (مثال: الصف الأول)" class="input-field">
                 <div class="grid grid-cols-2 gap-2">
                     <input id="class_year" type="text" placeholder="السنة (2025/2026)" class="input-field" value="2025/2026">
-                    <input id="class_capacity" type="number" placeholder="السعة (مثال: 30)" class="input-field" value="30">
+                    <input id="class_capacity" type="number" placeholder="السعة (مثال: 2)" class="input-field" value="2" title="خليها 2 عشان نختبر التوزيع التلقائي بسرعة">
                 </div>
-                <button onclick="testCreateClass()" class="btn btn-green w-full">حفظ الفصل</button>
+                <button onclick="testCreateClass()" class="btn btn-green w-full mt-2">حفظ الفصل</button>
+                <p class="text-xs text-slate-400 mt-2 text-center">* السعة الافتراضية هنا 2 لتسهيل اختبار التوزيع.</p>
                 <pre id="res_class">...</pre>
             </div>
         </div>
@@ -90,37 +91,33 @@
                 
                 <div class="section-title mt-2">التخصص:</div>
                 <input id="t_subject_id" type="text" placeholder="ID المادة (من خطوة 2)" class="input-field" style="border-color: #10b981;">
-                <input id="t_grade" type="text" placeholder="المستوى الذي يدرسه (مثال: الصف الأول)" class="input-field" style="border-color: #10b981;">
-                
+<input id="t_grade" type="text" placeholder="المستويات مفصولة بفاصلة (مثال: LEVEL1, LEVEL2)" class="input-field" style="border-color: #10b981;">                
                 <button onclick="testCreateTeacher()" class="btn btn-purple w-full mt-2">إنشاء حساب المعلم</button>
                 <pre id="res_teacher">...</pre>
             </div>
 
             <div class="card" style="border-top: 4px solid #7c3aed;">
-                <h2 class="text-lg font-bold mb-3 text-purple-400">5. تسجيل طالب وولي أمر</h2>
+                <h2 class="text-lg font-bold mb-3 text-purple-400">5. تسجيل طالب (التوزيع التلقائي مفعل 🤖)</h2>
                 
-                <div class="section-title">بيانات الطالب:</div>
-                <div class="grid grid-cols-3 gap-2">
-                    <input id="s_fname" type="text" placeholder="الاسم" class="input-field">
-                    <input id="s_lname" type="text" placeholder="العائلة" class="input-field">
+                <div class="section-title">بيانات الطالب (سيتم إلحاقه بفصل آلياً):</div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input id="s_fname" type="text" placeholder="اسم الطالب" class="input-field">
                     <input id="s_phone" type="text" placeholder="هاتف الطالب" class="input-field">
                 </div>
-                <div class="grid grid-cols-2 gap-2">
-                    <input id="s_grade" type="text" placeholder="المستوى (الصف الأول)" class="input-field">
-                    <input id="s_class" type="text" placeholder="ID الفصل (من خطوة 3)" class="input-field" style="border-color: #10b981;">
-                </div>
+                <input id="s_grade" type="text" placeholder="المستوى الدراسي (مثال: الصف الأول)" class="input-field" style="border-color: #3b82f6;">
                 
-                <div class="section-title mt-2">بيانات ولي الأمر:</div>
+                <div class="section-title mt-2">بيانات ولي الأمر (مطلوبة للربط):</div>
                 <div class="grid grid-cols-2 gap-2">
                     <input id="p_fname" type="text" placeholder="اسم الأب" class="input-field">
-                    <input id="p_nid" type="text" placeholder="الرقم القومي للأب" class="input-field">
+                    <input id="p_lname" type="text" placeholder="اسم العائلة" class="input-field">
                 </div>
                 <div class="grid grid-cols-2 gap-2">
+                    <input id="p_nid" type="text" placeholder="الرقم القومي للأب" class="input-field" style="border-color: #e11d48;">
                     <input id="p_phone" type="text" placeholder="هاتف الأب" class="input-field">
-                    <input id="p_email" type="email" placeholder="إيميل الأب" class="input-field">
                 </div>
+                <input id="p_email" type="email" placeholder="إيميل الأب (اختياري)" class="input-field">
                 
-                <button onclick="testCreateStudent()" class="btn btn-purple w-full mt-2">حفظ الطالب وإنشاء حساب الأب</button>
+                <button onclick="testCreateStudent()" class="btn btn-purple w-full mt-2">حفظ وتسكين الطالب</button>
                 <pre id="res_student">...</pre>
             </div>
         </div>
@@ -129,12 +126,13 @@
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div class="card" style="border-top: 4px solid #ea580c;">
-                <h2 class="text-lg font-bold mb-3 text-orange-400">6. إسناد حصة دراسية</h2>
+                <h2 class="text-lg font-bold mb-3 text-orange-400">6. إسناد حصة دراسية (اختبار التداخل)</h2>
                 <input id="sch_teacher" type="text" placeholder="ID المعلم (من خطوة 4)" class="input-field" style="border-color: #8b5cf6;">
                 <input id="sch_class" type="text" placeholder="ID الفصل (من خطوة 3)" class="input-field" style="border-color: #10b981;">
                 
-<label class="text-xs text-slate-400">تاريخ الحصة (سيتم استنتاج اليوم تلقائياً):</label>
-<input id="sch_date" type="date" class="input-field mt-1" style="border-color: #ea580c;">
+                <div class="section-title">تاريخ الحصة (سيتم استنتاج اليوم آلياً):</div>
+                <input id="sch_date" type="date" class="input-field" style="border-color: #ea580c;">
+                
                 <div class="grid grid-cols-2 gap-2 text-sm text-slate-400">
                     <div>
                         <label>وقت البداية:</label>
@@ -142,39 +140,29 @@
                     </div>
                     <div>
                         <label>وقت النهاية:</label>
-                        <input id="sch_end" type="time" class="input-field mt-1" value="08:45">
+                        <input id="sch_end" type="time" class="input-field mt-1" value="09:00">
                     </div>
                 </div>
                 <button onclick="testCreateSchedule()" class="btn btn-orange w-full mt-2">إضافة الحصة للجدول</button>
+                <p class="text-xs text-slate-400 mt-2 text-center">* جرب إضافة حصة أخرى متداخلة زمنياً لاختبار الحماية.</p>
                 <pre id="res_schedule">...</pre>
             </div>
 
             <div class="card" style="border-top: 4px solid #e11d48;">
-                <h2 class="text-lg font-bold mb-3 text-red-400">7. إنشاء جدول امتحانات (جديد)</h2>
-                
-                <div class="section-title">بيانات الامتحان (الترويسة):</div>
-                <input id="exam_title" type="text" placeholder="عنوان الامتحان (مثال: امتحانات نصف العام)" class="input-field" value="امتحانات نصف العام">
+                <h2 class="text-lg font-bold mb-3 text-red-400">7. إنشاء جدول امتحانات</h2>
+                <input id="exam_title" type="text" placeholder="عنوان الامتحان" class="input-field" value="امتحانات نصف العام">
                 <div class="grid grid-cols-2 gap-2">
                     <input id="exam_year" type="text" placeholder="السنة الدراسية" class="input-field" value="2025/2026">
-                    <input id="exam_grade" type="text" placeholder="المستوى (مثال: الصف الأول)" class="input-field" value="الصف الأول">
+                    <input id="exam_grade" type="text" placeholder="المستوى" class="input-field" value="الصف الأول">
                 </div>
-
                 <div class="section-title mt-2">إضافة مادة للجدول:</div>
-                <input id="exam_subject" type="text" placeholder="ID المادة (من خطوة 2)" class="input-field" style="border-color: #10b981;">
+                <input id="exam_subject" type="text" placeholder="ID المادة" class="input-field" style="border-color: #10b981;">
                 <input id="exam_date" type="date" class="input-field">
-                <div class="grid grid-cols-2 gap-2 text-sm text-slate-400">
-                    <div>
-                        <label>من الساعة:</label>
-                        <input id="exam_start" type="time" class="input-field mt-1" value="09:00">
-                    </div>
-                    <div>
-                        <label>إلى الساعة:</label>
-                        <input id="exam_end" type="time" class="input-field mt-1" value="11:00">
-                    </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <input id="exam_start" type="time" class="input-field mt-1" value="09:00">
+                    <input id="exam_end" type="time" class="input-field mt-1" value="11:00">
                 </div>
-
-                <button onclick="testCreateExam()" class="btn btn-red w-full mt-3">حفظ جدول الامتحان</button>
-                <p class="text-xs text-slate-400 mt-2 text-center">* السيرفر سيستقبل هذه البيانات في مصفوفة (Timetable Array).</p>
+                <button onclick="testCreateExam()" class="btn btn-red w-full mt-2">حفظ جدول الامتحان</button>
                 <pre id="res_exam">...</pre>
             </div>
         </div>
@@ -183,11 +171,11 @@
             <h2 class="text-lg font-bold mb-3 text-blue-400">8. استعراض البيانات (READ)</h2>
             <div class="flex flex-wrap gap-2 mb-3">
                 <button onclick="apiCall('/subjects', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">المواد</button>
-                <button onclick="apiCall('/classrooms', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">الفصول</button>
+                <button onclick="apiCall('/classrooms', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">الفصول (راقب العداد هنا)</button>
                 <button onclick="apiCall('/teacher', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">المعلمون</button>
                 <button onclick="apiCall('/students', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">الطلاب</button>
-                <button onclick="apiCall('/schedules', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">الجدول الأسبوعي</button>
-                <button onclick="apiCall('/exams', 'GET', null, 'res_getall')" class="btn btn-dark text-xs" style="border-color: #e11d48; color: #fda4af;">جداول الامتحانات</button>
+                <button onclick="apiCall('/schedules', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">الجداول</button>
+                <button onclick="apiCall('/exams', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">الامتحانات</button>
             </div>
             <pre id="res_getall" style="max-height: 400px;">النتائج ستظهر هنا...</pre>
         </div>
@@ -257,11 +245,14 @@
                 name: document.getElementById("class_name").value, 
                 grade: document.getElementById("class_grade").value,
                 academicYear: document.getElementById("class_year").value,
-                capacity: parseInt(document.getElementById("class_capacity").value)
+                capacity: parseInt(document.getElementById("class_capacity").value) // 🔥 إرسال السعة
             }, "res_class");
         }
+function testCreateTeacher() {
+            // تحويل النص المكتوب لمصفوفة من المستويات
+            const gradesInput = document.getElementById("t_grade").value;
+            const gradesArray = gradesInput.split(',').map(grade => grade.trim());
 
-        function testCreateTeacher() {
             apiCall("/teacher", "POST", { 
                 firstName: document.getElementById("t_fname").value,
                 lastName: document.getElementById("t_lname").value,
@@ -269,21 +260,21 @@
                 phoneNumber: document.getElementById("t_phone").value,
                 email: document.getElementById("t_email").value,
                 subjectId: document.getElementById("t_subject_id").value,
-                teachingGrades: [document.getElementById("t_grade").value] 
+                teachingGrades: gradesArray // 🔥 هنا بنبعت المصفوفة للباك إند
             }, "res_teacher");
         }
 
+        // 🔥 الدالة المحدثة لاختبار التوزيع التلقائي
         function testCreateStudent() {
             let payload = {
                 firstName: document.getElementById("s_fname").value,
-                lastName: document.getElementById("s_lname").value,
+                lastName: document.getElementById("p_lname").value, // باخد اللقب من بيانات الأب
                 phoneNumber: document.getElementById("s_phone").value,
                 gender: "male",
                 grade: document.getElementById("s_grade").value,
-                classroom: document.getElementById("s_class").value,
-                
+                // ❌ تم إزالة Classroom ID من هنا تماماً
                 parentFirstName: document.getElementById("p_fname").value,
-                parentLastName: document.getElementById("s_lname").value,
+                parentLastName: document.getElementById("p_lname").value,
                 parentNationalId: document.getElementById("p_nid").value,
                 parentPhone: document.getElementById("p_phone").value,
                 parentEmail: document.getElementById("p_email").value
@@ -291,34 +282,32 @@
             apiCall("/students", "POST", payload, "res_student");
         }
 
-       function testCreateSchedule() {
-    const dateInput = document.getElementById("sch_date").value;
-    if (!dateInput) {
-        alert("برجاء اختيار التاريخ أولاً");
-        return;
-    }
+        // 🔥 الدالة المحدثة لاختبار استنتاج اليوم والتداخل الزمني
+        function testCreateSchedule() {
+            const dateInput = document.getElementById("sch_date").value;
+            if (!dateInput) {
+                document.getElementById("res_schedule").innerText = "خطأ: برجاء اختيار تاريخ الحصة أولاً.";
+                return;
+            }
 
-    // مصفوفة لتحويل رقم اليوم لاسم اليوم اللي السيرفر بيفهمه
-    const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
-    const selectedDate = new Date(dateInput);
-    const dayName = days[selectedDate.getDay()]; // بيطلع ترتيب اليوم في الأسبوع
+            const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+            const selectedDate = new Date(dateInput);
+            const dayName = days[selectedDate.getDay()];
 
-    apiCall("/schedules", "POST", {
-        teacher: document.getElementById("sch_teacher").value,
-        classroom: document.getElementById("sch_class").value,
-        day: dayName, // 🔥 هنا بعتنا اسم اليوم المستنتج (مثلاً mon)
-        startTime: document.getElementById("sch_start").value,
-        endTime: document.getElementById("sch_end").value
-    }, "res_schedule");
-}
+            apiCall("/schedules", "POST", {
+                teacher: document.getElementById("sch_teacher").value,
+                classroom: document.getElementById("sch_class").value,
+                day: dayName, // 🔥 السيرفر هياخد اليوم المستنتج
+                startTime: document.getElementById("sch_start").value,
+                endTime: document.getElementById("sch_end").value
+            }, "res_schedule");
+        }
 
-        // 🔥 الدالة الجديدة الخاصة باختبار إنشاء جدول الامتحان
         function testCreateExam() {
             const payload = {
                 title: document.getElementById("exam_title").value,
                 academicYear: document.getElementById("exam_year").value,
                 grade: document.getElementById("exam_grade").value,
-                // السيرفر بيستقبلها كمصفوفة (Timetable Array)
                 timetable: [
                     {
                         subject: document.getElementById("exam_subject").value,
@@ -328,8 +317,6 @@
                     }
                 ]
             };
-            
-            // تأكد إن مسار الراوت في الباك إند عندك هو /exams أو عدله حسب مشروعك
             apiCall("/exams", "POST", payload, "res_exam");
         }
     </script>
