@@ -6,7 +6,6 @@ const scheduleSchema = new mongoose.Schema({
     ref: "User",
     required: true
   },
-  // 🔥 تم التحديث للربط بجدول المواد
   subject: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subject",

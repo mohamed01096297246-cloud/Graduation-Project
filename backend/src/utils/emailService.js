@@ -31,5 +31,32 @@ const sendCredentialsEmail = async (email, username, password, role) => {
     console.log("Email Error:", error);
   }
 };
+const sendAlertEmail = async (email, subjectTitle, messageBody) => {
+  try {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
 
-module.exports = sendCredentialsEmail;
+    const mailOptions = {
+      from: `"EduLink" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: subjectTitle,
+      html: `
+        <h3>تنبيه من إدارة المدرسة</h3>
+        <p>${messageBody}</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+  } catch (error) {
+    console.log("Email Error:", error);
+  }
+};
+module.exports = { 
+  sendCredentialsEmail,  
+};
+

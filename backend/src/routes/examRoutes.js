@@ -1,31 +1,25 @@
 const express = require("express");
 const router = express.Router();
+
+// استدعاء دوال الكنترولر الخاصة بالامتحانات
 const examController = require("../controllers/examController");
+
+// استدعاء ميدل وير الحماية والصلاحيات
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-router.post("/", protect, authorize("admin"), examController.createExam);
+// ==========================================
+// 1. إنشاء جدول امتحانات جديد (صلاحية: الأدمن فقط)
+// ==========================================
+router.post("/", protect, authorize("admin"), examController.createExamSchedule);
 
-router.get(
-  "/",
-  protect,
-  authorize("teacher", "admin", "parent"),
-  examController.getAllExams
-);
+// ==========================================
+// 2. استعراض كل جداول الامتحانات (صلاحية: الأدمن، وممكن نضيف المعلم لو حابب يشوفها)
+// ==========================================
+router.get("/", protect, authorize("admin", "teacher"), examController.getAllExams);
 
-router.get(
-  "/:id",
-  protect,
-  authorize("teacher", "admin", "parent"),
-  examController.getExam
-);
-
-router.put("/:id", protect, authorize("admin"), examController.updateExam);
-
-router.delete(
-  "/:id",
-  protect,
-  authorize("admin"),
-  examController.deleteExam
-);
+// ==========================================
+// 3. استعراض جدول الامتحانات الخاص بطالب معين (صلاحية: ولي الأمر، الأدمن)
+// ==========================================
+router.get("/student/:studentId", protect, authorize("parent", "admin"), examController.getStudentExams);
 
 module.exports = router;

@@ -13,6 +13,11 @@ const classroomSchema = new mongoose.Schema(
       required: [true, "الصف الدراسي مطلوب"],
       trim: true,
     },
+    
+    capacity: { type: Number, default: 30 },
+
+    currentStudents: { type: Number, default: 0 },
+
     academicYear: {
       type: String,
       required: [true, "السنة الدراسية مطلوبة"],

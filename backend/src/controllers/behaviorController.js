@@ -11,14 +11,8 @@ exports.createBehavior = async (req, res) => {
   try {
     const { student, type, note } = req.body;
 
-    if (req.user.role !== 'teacher') {
-      return res.status(403).json({ message: "هذه الصلاحية للمعلمين فقط" });
-    }
-
-    const studentData = await Student.findById(student).populate("parent");
-    if (!studentData) {
-      return res.status(404).json({ message: "الطالب غير موجود" });
-    }
+    const studentData = await Student.findById(student);
+    if (!studentData) return res.status(404).json({ message: "الطالب غير موجود" });
 
     const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
     const dayName = days[new Date().getDay()];
@@ -48,29 +42,31 @@ exports.createBehavior = async (req, res) => {
       teacher: req.user.id,
       type, 
       note,
-      subject: activeClass.subject, 
+      subject: activeClass.subject, // السيرفر بيسحب المادة أوتوماتيك من الحصة
       date: new Date()
     });
 
-    
-    res.status(201).json({
-      message: "تم تسجيل السلوك بنجاح ",
-      behavior
-    });
-
+    res.status(201).json({ success: true, message: "تم تسجيل السلوك بنجاح", behavior });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-
 exports.getAllBehavior = async (req, res) => {
   try {
-    const data = await Behavior.find()
-      .populate("student")
-      .populate("teacher", "name role");
+    let filter = {};
+    // لو اللي بيطلب مدرس، نجيبله السلوك اللي هو بس كتبه
+    if (req.user.role === 'teacher') {
+      filter = { teacher: req.user.id };
+    }
 
-    res.json(data);
+    const data = await Behavior.find(filter)
+      .populate("student", "firstName lastName")
+      .populate("teacher", "firstName lastName") // 🔥 تعديل الـ Name
+      .populate("subject", "name") // 🔥 جلب اسم المادة
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, count: data.length, data });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -78,11 +74,22 @@ exports.getAllBehavior = async (req, res) => {
 
 exports.getStudentBehavior = async (req, res) => {
   try {
-    const data = await Behavior.find({
-      student: req.params.studentId
-    });
+    const { studentId } = req.params;
 
-    res.json(data);
+    // 🔥 حماية ولي الأمر: لا يرى سوى أبنائه
+    const student = await Student.findById(studentId);
+    if (!student) return res.status(404).json({ message: "الطالب غير موجود" });
+
+    if (req.user.role === 'parent' && student.parent.toString() !== req.user.id) {
+      return res.status(403).json({ message: "عفواً، لا يمكنك استعراض سجل طالب ليس من أبنائك." });
+    }
+
+    const data = await Behavior.find({ student: studentId })
+      .populate("teacher", "firstName lastName")
+      .populate("subject", "name")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, data });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -90,13 +97,16 @@ exports.getStudentBehavior = async (req, res) => {
 
 exports.deleteBehavior = async (req, res) => {
   try {
-    const behavior = await Behavior.findByIdAndDelete(req.params.id);
+    const behavior = await Behavior.findById(req.params.id);
+    if (!behavior) return res.status(404).json({ message: "سجل السلوك غير موجود" });
 
-    if (!behavior) {
-      return res.status(404).json({ message: "Not found" });
+    // 🔥 حماية: المدرس يقدر يمسح السجل اللي هو عمله بس، والأدمن يمسح أي حاجة
+    if (req.user.role === 'teacher' && behavior.teacher.toString() !== req.user.id) {
+      return res.status(403).json({ message: "لا يمكنك حذف تقييم سلوكي كتبه معلم آخر" });
     }
 
-    res.json({ message: "Deleted successfully" });
+    await behavior.deleteOne();
+    res.json({ success: true, message: "تم حذف السجل بنجاح" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

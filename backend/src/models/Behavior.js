@@ -7,29 +7,26 @@ const behaviorSchema = new mongoose.Schema(
       ref: "Student",
       required: true,
     },
-
     teacher: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
-subject: {
-  type: String,
-  required: true,
-},
-
-date: {
-  type: Date,
-  default: Date.now,
-},
-
+    // 🔥 تم الربط بجدول المواد الفعلي
+    subject: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Subject",
+      required: true,
+    },
+    date: {
+      type: Date,
+      default: Date.now,
+    },
     type: {
       type: String,
       enum: ["positive", "negative", "neutral"],
       required: true,
     },
-
     note: {
       type: String,
       required: true,

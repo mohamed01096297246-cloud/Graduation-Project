@@ -3,7 +3,7 @@ const Subject = require("../models/Subject");
 const Schedule = require("../models/Schedule");
 const Attendance = require("../models/Attendance");
 const Homework = require("../models/Homework");
-const sendCredentialsEmail = require("../utils/emailService");
+const { sendCredentialsEmail } = require("../utils/emailService");
 const { generateUsername, generatePassword } = require("../utils/generateCredentials");
 
 const timeToMinutes = (time) => {
@@ -50,6 +50,25 @@ exports.createTeacher = async (req, res) => {
   }
 };
 
+exports.getAllTeachers = async (req, res) => {
+  try {
+    const teachers = await User.find({ role: "teacher" })
+      .populate("subject", "name code") 
+      .select("firstName lastName phoneNumber email teachingGrades subject active"); 
+
+    res.status(200).json({
+      success: true,
+      count: teachers.length,
+      data: teachers
+    });
+  } catch (err) {
+    res.status(500).json({ 
+      success: false, 
+      message: "حدث خطأ أثناء جلب البيانات: " + err.message 
+    });
+  }
+};
+
 
 
 exports.getTeacherDashboard = async (req, res) => {
@@ -60,7 +79,7 @@ exports.getTeacherDashboard = async (req, res) => {
 
     const teacherId = req.user.id;
 
-    const days = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+    const days = ["sun", "mon", "tue", "wed", "thu",];
     const now = new Date();
     const day = days[now.getDay()];
     const currentTime = now.getHours() * 60 + now.getMinutes();

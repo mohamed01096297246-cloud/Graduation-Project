@@ -52,11 +52,11 @@ exports.createAttendance = async (req, res) => {
     });
 
     if (status === "absent" && studentData.parent && studentData.parent.email) {
-      await sendCredentialsEmail(
-        studentData.parent.email,
-        "تنبيه غياب طالب",
-        `نحيطكم علماً بغياب الطالب: ${studentData.firstName} عن حصة اليوم.`
-      );
+      await sendAlertEmail(
+  studentData.parent.email,
+  "تنبيه غياب طالب",
+  `نحيطكم علماً بغياب الطالب: ${studentData.firstName} عن حصة اليوم.`
+);
     }
 
     res.status(201).json({ success: true, attendance });

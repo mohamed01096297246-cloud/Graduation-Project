@@ -3,6 +3,7 @@ const { generateUsername, generatePassword } = require("../utils/generateCredent
 const sendCredentialsEmail = require("../utils/emailService");
 const User = require("../models/User");
 const Student = require("../models/Student");
+const Classroom = require("../models/Classroom"); 
 
 exports.createStudent = async (req, res) => {
   const session = await mongoose.startSession();
@@ -13,6 +14,15 @@ exports.createStudent = async (req, res) => {
       firstName, lastName, phoneNumber, email, gender, grade, 
       parentFirstName, parentLastName, parentNationalId, parentEmail, parentPhone 
     } = req.body;
+
+    const availableClassroom = await Classroom.findOne({
+      grade: grade,
+      $expr: { $lt: ["$currentStudents", "$capacity"] }
+    }).session(session);
+
+    if (!availableClassroom) {
+      throw new Error(`عفواً، لا توجد فصول متاحة حالياً في (${grade}). يرجى إنشاء فصل جديد أولاً.`);
+    }
 
     if (!parentNationalId) {
       throw new Error("الرقم القومي لولي الأمر مطلوب للتحقق من هويته");
@@ -53,10 +63,17 @@ exports.createStudent = async (req, res) => {
 
     const studentResult = await Student.create([{
       firstName, lastName, phoneNumber, email, gender, grade, 
-      parent: finalParentId 
+      parent: finalParentId,
+      classroom: availableClassroom._id 
     }], { session });
 
     const student = studentResult[0];
+
+    await Classroom.findByIdAndUpdate(
+      availableClassroom._id, 
+      { $inc: { currentStudents: 1 } }, 
+      { session }
+    );
 
     await User.findByIdAndUpdate(finalParentId, { $addToSet: { linkedStudents: student._id } }, { session });
     
@@ -70,8 +87,8 @@ exports.createStudent = async (req, res) => {
     res.status(201).json({
       success: true,
       message: isNewParent 
-        ? "تم إنشاء الطالب وحساب ولي الأمر وإرسال بيانات الدخول بنجاح" 
-        : "تم إنشاء الطالب وربطه بحساب ولي الأمر الحالي بنجاح",
+        ? `تم إنشاء الطالب وتوزيعه تلقائياً على فصل (${availableClassroom.name}) وإرسال بيانات دخول الأب.` 
+        : `تم إنشاء الطالب وتوزيعه على فصل (${availableClassroom.name}) وربطه بحساب ولي الأمر الحالي.`,
       data: student
     });
 

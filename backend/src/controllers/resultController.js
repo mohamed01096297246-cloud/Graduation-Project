@@ -1,120 +1,97 @@
 const Result = require("../models/Result");
-const Exam = require("../models/Exam");
 const Student = require("../models/Student");
 
-exports.addResult = async (req, res) => {
+exports.addGrade = async (req, res) => {
   try {
-    const { exam, student, obtainedMarks, remarks } = req.body;
+    const { studentId, examId, subjectId, grade } = req.body;
+    
+    const result = await Result.findOneAndUpdate(
+      { student: studentId, exam: examId, subject: subjectId },
+      { grade, teacher: req.user.id },
+      { upsert: true, new: true }
+    );
 
-    const examData = await Exam.findById(exam);
-    const studentData = await Student.findById(student);
-
-    if (!examData || !studentData) {
-      return res.status(404).json({ message: "الامتحان أو الطالب غير موجود" });
-    }
-
-    if (obtainedMarks > examData.totalMarks) {
-      return res.status(400).json({
-        message: `الدرجة لا يمكن أن تتجاوز ${examData.totalMarks}`,
-      });
-    }
-
-    if (req.user.subject && examData.subject !== req.user.subject) {
-      return res.status(403).json({
-        message: `غير مسموح لك برصد درجات مادة ${examData.subject}`,
-      });
-    }
-
-    if (
-      req.user.assignedClassrooms &&
-      !req.user.assignedClassrooms.includes(studentData.classroom.toString())
-    ) {
-      return res.status(403).json({
-        message: "هذا الطالب ليس ضمن فصولك",
-      });
-    }
-
-    const result = await Result.create({
-      exam,
-      student,
-      obtainedMarks,
-      remarks,
-      recordedBy: req.user.id,
-    });
-
-    res.status(201).json({
-      message: "تم رصد الدرجة بنجاح",
-      result,
-    });
+    res.status(200).json({ success: true, message: "تم رصد الدرجة", result });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({
-        message: "تم رصد درجة هذا الطالب بالفعل في هذا الامتحان",
-      });
-    }
-
     res.status(400).json({ message: err.message });
   }
 };
 
-exports.getStudentResults = async (req, res) => {
+exports.getReportCard = async (req, res) => {
   try {
-    const { studentId } = req.params;
+    const { studentId, examId } = req.params;
 
-    if (req.user.role === "parent") {
-      const student = await Student.findById(studentId);
+    const student = await Student.findById(studentId).populate("parent");
+    const grades = await Result.find({ student: studentId, exam: examId })
+      .populate("subject", "name")
+      .populate("exam", "title academicYear");
 
-      if (!student || student.parent.toString() !== req.user.id) {
-        return res.status(403).json({
-          message: "غير مسموح لك بعرض نتائج هذا الطالب",
-        });
+    if (grades.length === 0) return res.status(404).json({ message: "لم يتم رصد درجات بعد" });
+
+    let totalStudentMarks = 0;
+    let totalMaxMarks = grades.length * 100;
+
+    grades.forEach(g => {
+      totalStudentMarks += g.grade;
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        reportTitle: `نتائج امتحان الطالب ${student.firstName} في ${grades[0].exam.title}`,
+        academicYear: grades[0].exam.academicYear,
+        subjects: grades,
+        summary: {
+          studentTotal: totalStudentMarks,
+          maxTotal: totalMaxMarks,
+          percentage: ((totalStudentMarks / totalMaxMarks) * 100).toFixed(2) + "%"
+        }
       }
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+exports.updateGrade = async (req, res) => {
+  try {
+    const { id } = req.params; 
+    const { grade } = req.body;
+
+    if (grade < 0 || grade > 100) {
+      return res.status(400).json({ message: "الدرجة يجب أن تكون بين 0 و 100" });
     }
 
-    const data = await Result.find({ student: studentId })
-      .populate("exam")
-      .populate("student", "firstName lastName classroom")
-      .populate("recordedBy", "firstName lastName");
+    const updatedResult = await Result.findByIdAndUpdate(
+      id,
+      { 
+        grade, 
+        updatedBy: req.user.id 
+      },
+      { new: true, runValidators: true }
+    ).populate("student subject exam");
 
-    res.json(data);
+    if (!updatedResult) {
+      return res.status(404).json({ message: "سجل الدرجة غير موجود" });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "تم تعديل الدرجة بنماح بواسطة الإدارة",
+      data: updatedResult
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-exports.updateResult = async (req, res) => {
+exports.deleteGrade = async (req, res) => {
   try {
-    const result = await Result.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
+    const { id } = req.params;
+    const result = await Result.findByIdAndDelete(id);
 
-    if (!result) {
-      return res.status(404).json({ message: "النتيجة غير موجودة" });
-    }
+    if (!result) return res.status(404).json({ message: "السجل غير موجود" });
 
-    res.json({
-      message: "تم تعديل النتيجة بنجاح",
-      result,
-    });
-  } catch (err) {
-    res.status(400).json({ message: err.message });
-  }
-};
-
-exports.deleteResult = async (req, res) => {
-  try {
-    const result = await Result.findByIdAndDelete(req.params.id);
-
-    if (!result) {
-      return res.status(404).json({ message: "النتيجة غير موجودة" });
-    }
-
-    res.json({ message: "تم حذف النتيجة بنجاح" });
+    res.status(200).json({ success: true, message: "تم حذف سجل الدرجة نهائياً" });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

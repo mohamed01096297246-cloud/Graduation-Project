@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema(
       enum: ["admin", "teacher", "parent"],
       default: "parent",
     },
+    
     subject: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Subject", 

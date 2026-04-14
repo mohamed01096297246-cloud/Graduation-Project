@@ -1,26 +1,14 @@
 const express = require("express");
 const router = express.Router();
-
-const {
-  addResult,
-  getStudentResults,
-  updateResult,
-  deleteResult,
-} = require("../controllers/resultController");
-
+const resultController = require("../controllers/resultController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-router.post("/", protect, authorize("teacher"), addResult);
+router.post("/add", protect, authorize("teacher"), resultController.addGrade);
 
-router.get(
-  "/student/:studentId",
-  protect,
-  authorize("teacher", "admin", "parent"),
-  getStudentResults
-);
+router.put("/update/:id", protect, authorize("admin"), resultController.updateGrade);
 
-router.put("/:id", protect, authorize("admin"), updateResult);
+router.delete("/delete/:id", protect, authorize("admin"), resultController.deleteGrade);
 
-router.delete("/:id", protect, authorize("admin"), deleteResult);
+router.get("/report/:studentId/:examId", protect, authorize("parent", "admin"), resultController.getReportCard);
 
 module.exports = router;

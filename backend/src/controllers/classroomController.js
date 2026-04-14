@@ -4,7 +4,7 @@ const Schedule = require("../models/Schedule");
 
 exports.createClassroom = async (req, res) => {
   try {
-    const { name, grade, academicYear } = req.body;
+    const { name, grade, academicYear, capacity } = req.body;
 
     const existingClass = await Classroom.findOne({
       name,
@@ -22,6 +22,7 @@ exports.createClassroom = async (req, res) => {
       name,
       grade,
       academicYear,
+      capacity: capacity || 30 
     });
 
     res.status(201).json({
@@ -76,7 +77,18 @@ exports.getClassroom = async (req, res) => {
 
 exports.updateClassroom = async (req, res) => {
   try {
-    const { name, grade, academicYear } = req.body;
+    const { name, grade, academicYear, capacity } = req.body;
+
+    const currentClassroom = await Classroom.findById(req.params.id);
+    if (!currentClassroom) {
+      return res.status(404).json({ message: "الفصل غير موجود" });
+    }
+
+    if (capacity && capacity < currentClassroom.currentStudents) {
+      return res.status(400).json({
+        message: `خطأ منطقي: لا يمكن تقليل سعة الفصل إلى (${capacity}) لأن به حالياً (${currentClassroom.currentStudents}) طلاب.`
+      });
+    }
 
     const existingClass = await Classroom.findOne({
       name,
@@ -91,21 +103,15 @@ exports.updateClassroom = async (req, res) => {
       });
     }
 
-    const classroom = await Classroom.findByIdAndUpdate(
+    const updatedClassroom = await Classroom.findByIdAndUpdate(
       req.params.id,
-      { name, grade, academicYear },
+      { name, grade, academicYear, capacity },
       { new: true, runValidators: true }
     );
 
-    if (!classroom) {
-      return res.status(404).json({
-        message: "الفصل غير موجود",
-      });
-    }
-
     res.json({
       message: "تم تحديث بيانات الفصل بنجاح",
-      classroom,
+      classroom: updatedClassroom,
     });
   } catch (err) {
     res.status(400).json({ message: err.message });

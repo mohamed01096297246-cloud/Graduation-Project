@@ -1,103 +1,55 @@
 const Exam = require("../models/Exam");
 const Student = require("../models/Student");
 
-exports.createExam = async (req, res) => {
+exports.createExamSchedule = async (req, res) => {
   try {
+    const { title, academicYear, grade, timetable } = req.body;
+
     const exam = await Exam.create({
-      ...req.body,
-      createdBy: req.user.id,
+      title,
+      academicYear,
+      grade,
+      timetable
     });
 
     res.status(201).json({
-      message: "تم إنشاء جدول الامتحان بنجاح",
-      exam,
+      success: true,
+      message: "تم إنشاء جدول الامتحانات بنجاح",
+      data: exam
     });
   } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({
-        message: "هذا الامتحان مسجل بالفعل لنفس الصف والمادة والتاريخ",
-      });
-    }
     res.status(400).json({ message: err.message });
   }
 };
 
 exports.getAllExams = async (req, res) => {
   try {
-    let filter = {};
+    const exams = await Exam.find()
+      .populate("timetable.subject", "name") 
+      .sort({ createdAt: -1 });
 
-    if (req.user.role === "parent") {
-      const students = await Student.find({ parent: req.user.id }).select(
-        "grade"
-      );
-      const grades = [...new Set(students.map((s) => s.grade))];
-      filter = { grade: { $in: grades } };
-    } else if (req.user.role === "teacher") {
-      filter = { grade: { $in: req.user.assignedGrades || [] } };
-    }
-
-    const exams = await Exam.find(filter)
-      .populate("createdBy", "name email")
-      .sort({ date: 1 });
-
-    res.json(exams);
+    res.status(200).json({ success: true, count: exams.length, data: exams });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-exports.getExam = async (req, res) => {
+exports.getStudentExams = async (req, res) => {
   try {
-    const exam = await Exam.findById(req.params.id).populate(
-      "createdBy",
-      "name email"
-    );
+    const { studentId } = req.params;
 
-    if (!exam) {
-      return res.status(404).json({ message: "الامتحان غير موجود" });
+    const student = await Student.findById(studentId);
+    if (!student) return res.status(404).json({ message: "الطالب غير موجود" });
+
+    if (req.user.role === 'parent' && student.parent.toString() !== req.user.id) {
+      return res.status(403).json({ message: "غير مصرح لك" });
     }
 
-    res.json(exam);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
+    const exams = await Exam.find({ grade: student.grade })
+      .populate("timetable.subject", "name")
+      .sort({ createdAt: -1 });
 
-exports.updateExam = async (req, res) => {
-  try {
-    const exam = await Exam.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-
-    if (!exam) {
-      return res.status(404).json({ message: "الامتحان غير موجود" });
-    }
-
-    res.json({
-      message: "تم تحديث جدول الامتحان بنجاح",
-      exam,
-    });
-  } catch (err) {
-    if (err.code === 11000) {
-      return res.status(400).json({
-        message: "يوجد امتحان آخر بنفس البيانات",
-      });
-    }
-    res.status(400).json({ message: err.message });
-  }
-};
-
-exports.deleteExam = async (req, res) => {
-  try {
-    const exam = await Exam.findByIdAndDelete(req.params.id);
-
-    if (!exam) {
-      return res.status(404).json({ message: "الامتحان غير موجود" });
-    }
-
-    res.json({ message: "تم حذف جدول الامتحان بنجاح" });
+    res.status(200).json({ success: true, data: exams });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -1,153 +1,74 @@
 const Homework = require("../models/Homework");
+const Classroom = require("../models/Classroom");
+const User = require("../models/User");
 const Student = require("../models/Student");
-const sendCredentialsEmail = require("../utils/emailService"); 
 
+// 1. إنشاء واجب جديد (للمعلمين فقط)
 exports.createHomework = async (req, res) => {
   try {
-    const { title, description, subject, grade, classroom, dueDate, maxGrade } =
-      req.body;
+    // المدرس بيبعت دول بس من الفرونت إند
+    const { title, pageNumber, totalMarks, dueDate, classroomId } = req.body;
 
-    if (req.user.role !== "teacher") {
-      return res.status(403).json({ message: "المعلمين فقط" });
+    // التأكد من وجود الفصل
+    const classroom = await Classroom.findById(classroomId);
+    if (!classroom) {
+      return res.status(404).json({ message: "الفصل غير موجود" });
     }
 
-    if (req.user.subject && subject !== req.user.subject) {
-      return res.status(403).json({
-        message: `غير مسموح لك بمادة ${subject}`,
-      });
-    }
+    // جلب بيانات المدرس عشان نسحب منها المادة
+    const teacher = await User.findById(req.user.id);
 
-    if (
-      req.user.assignedClassrooms &&
-      !req.user.assignedClassrooms.includes(classroom)
-    ) {
-      return res.status(403).json({
-        message: "هذا الفصل غير تابع لك",
-      });
+    // 🔥 حماية: هل المدرس مسموح له يدرس المستوى بتاع الفصل ده؟
+    if (!teacher.teachingGrades.includes(classroom.grade)) {
+      return res.status(403).json({ message: "غير مصرح لك بإضافة واجب لهذا المستوى الدراسي." });
     }
 
     const homework = await Homework.create({
       title,
-      description,
-      subject,
-      grade,
-      classroom,
+      pageNumber,
+      totalMarks,
       dueDate,
-      maxGrade,
+      classroom: classroomId,
       teacher: req.user.id,
+      subject: teacher.subject // سحبنا المادة أوتوماتيك!
     });
-
-    const students = await Student.find({ classroom, grade }).populate("parent");
-
-    for (const student of students) {
-      if (student.parent?.email) {
-        await sendCredentialsEmail(
-          student.parent.email,
-          "واجب جديد",
-          `تم إضافة واجب جديد في مادة ${subject}`
-        );
-      }
-    }
 
     res.status(201).json({
-      message: "تم إنشاء الواجب بنجاح",
-      homework,
+      success: true,
+      message: "تم إرسال الواجب لجميع طلاب الفصل بنجاح",
+      data: homework
     });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-exports.getAllHomework = async (req, res) => {
-  try {
-    let filter = {};
-
-    if (req.user.role === "teacher") {
-      filter = { teacher: req.user.id };
-    }
-
-    if (req.user.role === "parent") {
-      const students = await Student.find({ parent: req.user.id });
-      const classrooms = students.map((s) => s.classroom);
-      filter = { classroom: { $in: classrooms } };
-    }
-
-    const data = await Homework.find(filter)
-      .populate("teacher", "firstName lastName")
-      .sort({ createdAt: -1 });
-
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-exports.getHomework = async (req, res) => {
-  try {
-    const hw = await Homework.findById(req.params.id).populate(
-      "teacher",
-      "firstName lastName"
-    );
-
-    if (!hw) {
-      return res.status(404).json({ message: "غير موجود" });
-    }
-
-    if (req.user.role === "parent") {
-      const allowed = await Student.findOne({
-        parent: req.user.id,
-        classroom: hw.classroom,
-      });
-
-      if (!allowed) {
-        return res.status(403).json({ message: "غير مسموح" });
-      }
-    }
-
-    res.json(hw);
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-
-exports.updateHomework = async (req, res) => {
-  try {
-    const hw = await Homework.findById(req.params.id);
-
-    if (!hw) {
-      return res.status(404).json({ message: "غير موجود" });
-    }
-
-    if (req.user.role !== "teacher" && hw.teacher.toString() !== req.user.id) {
-      return res.status(403).json({ message: "غير مسموح" });
-    }
-
-    const updated = await Homework.findByIdAndUpdate(req.params.id, req.body, {
-      new: true,
-      runValidators: true,
-    });
-
-    res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
 };
 
-exports.deleteHomework = async (req, res) => {
+
+// 2. عرض الواجبات لولي الأمر (ذكية جداً)
+exports.getStudentHomeworks = async (req, res) => {
   try {
-    const hw = await Homework.findById(req.params.id);
+    const { studentId } = req.params;
 
-    if (!hw) {
-      return res.status(404).json({ message: "غير موجود" });
+    // نجيب الطالب الأول عشان نعرف هو في فصل إيه
+    const student = await Student.findById(studentId);
+    if (!student) return res.status(404).json({ message: "الطالب غير موجود" });
+
+    // 🔥 حماية الخصوصية: التأكد إن اللي بيطلب هو أبو الطالب فعلاً
+    if (req.user.role === "parent" && student.parent.toString() !== req.user.id) {
+      return res.status(403).json({ message: "غير مصرح لك باستعراض بيانات هذا الطالب." });
     }
 
-    if (req.user.role !== "teacher" && hw.teacher.toString() !== req.user.id) {
-      return res.status(403).json({ message: "غير مسموح" });
-    }
+    // 🔥 السحر: هنجيب كل الواجبات اللي مربوطة بـ (فصل الطالب) ده
+    const homeworks = await Homework.find({ classroom: student.classroom })
+      .populate("subject", "name") // نجيب اسم المادة (عربي، رياضة..)
+      .populate("teacher", "firstName lastName") // اسم المدرس
+      .sort({ createdAt: -1 }); // الترتيب من الأحدث للأقدم
 
-    await hw.deleteOne();
-
-    res.json({ message: "تم الحذف بنجاح" });
+    res.status(200).json({
+      success: true,
+      count: homeworks.length,
+      data: homeworks
+    });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

@@ -5,6 +5,7 @@ const { getTeacherDashboard } = require("../controllers/teacherController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
 router.post("/", protect, authorize("admin"), teacherController.createTeacher);
+router.get("/", protect, authorize("admin"), teacherController.getAllTeachers);
 router.get("/dashboard", protect, authorize("teacher"), getTeacherDashboard);
 
 module.exports = router;
