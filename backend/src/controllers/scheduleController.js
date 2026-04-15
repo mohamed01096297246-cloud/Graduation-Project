@@ -2,6 +2,7 @@ const Schedule = require("../models/Schedule");
 const User = require("../models/User");
 const Classroom = require("../models/Classroom");
 
+
 exports.createSchedule = async (req, res) => {
   try {
     const { teacher, classroom, day, startTime, endTime } = req.body;
@@ -69,6 +70,63 @@ exports.deleteSchedule = async (req, res) => {
     if (!schedule) return res.status(404).json({ message: "الحصة غير موجودة" });
 
     res.json({ message: "تم حذف الحصة من الجدول بنجاح" });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.updateSchedule = async (req, res) => {
+  try {
+    const { day, startTime, endTime, teacher, classroom, subject } = req.body;
+    const scheduleId = req.params.id;
+
+    const existingSchedule = await Schedule.findById(scheduleId);
+    if (!existingSchedule) {
+      return res.status(404).json({ message: "هذه الحصة غير موجودة في الجدول" });
+    }
+
+    if (day || startTime || endTime || teacher || classroom) {
+      
+      const checkDay = day || existingSchedule.day;
+      const checkStart = startTime || existingSchedule.startTime;
+      const checkEnd = endTime || existingSchedule.endTime;
+      const checkTeacher = teacher || existingSchedule.teacher;
+      const checkClassroom = classroom || existingSchedule.classroom;
+
+      const conflict = await Schedule.findOne({
+        _id: { $ne: scheduleId }, 
+        day: checkDay,
+        $or: [
+          { teacher: checkTeacher },    
+          { classroom: checkClassroom }  
+        ],
+
+        $and: [
+          { startTime: { $lt: checkEnd } },
+          { endTime: { $gt: checkStart } }
+        ]
+      });
+
+      if (conflict) {
+        const conflictTarget = conflict.teacher.toString() === checkTeacher.toString() ? "المعلم" : "الفصل";
+        return res.status(400).json({ 
+          message: `عفواً، يوجد تداخل زمني! ${conflictTarget} لديه حصة أخرى في نفس هذا الوقت.` 
+        });
+      }
+    }
+
+    const updatedSchedule = await Schedule.findByIdAndUpdate(
+      scheduleId,
+      req.body,
+      { new: true, runValidators: true }
+    ).populate("teacher classroom subject", "firstName lastName name");
+
+    res.json({
+      success: true,
+      message: "تم تحديث الحصة في الجدول بنجاح",
+      data: updatedSchedule
+    });
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

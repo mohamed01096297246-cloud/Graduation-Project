@@ -66,3 +66,43 @@ exports.getParentNotifications = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+exports.updateNotification = async (req, res) => {
+  try {
+    const { title, message } = req.body;
+    const notificationId = req.params.id;
+
+    const notification = await Notification.findByIdAndUpdate(
+      notificationId,
+      { title, message },
+      { new: true, runValidators: true }
+    );
+
+    if (!notification) {
+      return res.status(404).json({ message: "الإشعار غير موجود" });
+    }
+
+    res.json({
+      message: "تم تحديث الإشعار بنجاح",
+      notification
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+exports.deleteNotification = async (req, res) => {
+  try {
+    const notificationId = req.params.id;
+
+    const notification = await Notification.findByIdAndDelete(notificationId);
+
+    if (!notification) {
+      return res.status(404).json({ message: "الإشعار غير موجود بالفعل" });
+    }
+
+    res.json({ message: "تم حذف الإشعار بنجاح" });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
