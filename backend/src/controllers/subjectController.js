@@ -1,21 +1,25 @@
 const Subject = require("../models/Subject");
 const User = require("../models/User"); 
+const Grade=require("../models/Grade");
+
 
 exports.createSubject = async (req, res) => {
   try {
-    const { name, code, grade } = req.body;
+const { name, code, grade } = req.body; 
     
     const existingCode = await Subject.findOne({ code: code.trim().toUpperCase() });
     if (existingCode) {
       return res.status(400).json({ message: "كود هذه المادة مسجل مسبقاً" });
     }
 
-    const existingNameInGrade = await Subject.findOne({ name, grade });
+    const existingNameInGrade = await Subject.findOne({ name, grade }); 
     if (existingNameInGrade) {
-      return res.status(400).json({ message: `مادة (${name}) مسجلة بالفعل لـ (${grade})` });
+      return res.status(400).json({ message: `هذه المادة مسجلة بالفعل لهذه المرحلة` });
     }
 
     const subject = await Subject.create({ name, code, grade });
+
+    const subject = await Subject.create({ name, code, grade:gradeID });
     res.status(201).json({ message: "تم إضافة المادة بنجاح", subject });
   } catch (err) {
     res.status(400).json({ error: err.message });
@@ -29,7 +33,9 @@ exports.getAllSubjects = async (req, res) => {
       filter.grade = req.query.grade;
     }
 
-    const subjects = await Subject.find(filter).sort({ grade: 1, name: 1 });
+const subjects = await Subject.find(filter)
+      .populate("grade", "name academicYear")
+      .sort({ grade: 1, name: 1 });
     res.json(subjects);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -50,11 +56,11 @@ exports.updateSubject = async (req, res) => {
       }
     }
 
-    const subject = await Subject.findByIdAndUpdate(
+const subject = await Subject.findByIdAndUpdate(
       req.params.id,
       req.body,
       { new: true, runValidators: true }
-    );
+    ).populate("grade", "name academicYear"); 
     
     if (!subject) return res.status(404).json({ message: "المادة غير موجودة" });
     res.json({ message: "تم تحديث المادة بنجاح", subject });

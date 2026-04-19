@@ -35,6 +35,7 @@ const examRoutes = require("./src/routes/examRoutes");
 const resultRoutes = require("./src/routes/resultRoutes");
 const homeworkResultRoutes = require("./src/routes/homeworkResultRoutes");
 const notificationRoutes = require("./src/routes/notificationRoutes");
+const gradeRoutes = require("./src/routes/gradeRoutes");
 
 
 app.use("/api/auth", authRoutes);
@@ -52,6 +53,8 @@ app.use("/api/exams", examRoutes);
 app.use("/api/results", resultRoutes);
 app.use("/api/homework-results", homeworkResultRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/grades",gradeRoutes );
+
 
 
 app.get("/", (req, res) => {

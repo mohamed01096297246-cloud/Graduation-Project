@@ -14,10 +14,10 @@ const subjectSchema = new mongoose.Schema({
     uppercase: true 
   },
   grade: {
-    type: String,
-    required: [true, "المرحلة الدراسية للمادة مطلوبة"],
-    trim: true
-  }
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Grade",
+      required:[true, "المستوي الدراسي مطلوب"],
+    },
 }, { timestamps: true });
 
 subjectSchema.index({ name: 1, grade: 1 }, { unique: true });

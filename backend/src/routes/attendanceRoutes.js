@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  createAttendance,
+ recordBulkAttendance,
   getAllAttendance,
   getAttendanceById,
   getStudentAttendance,
@@ -12,12 +12,11 @@ const {
 const { protect, authorize } = require("../middleware/authMiddleware");
 
 
-router.post("/", protect, authorize("teacher"), createAttendance);
+router.post("/bulk", protect, authorize("teacher"), recordBulkAttendance);
 
 router.get("/", protect, authorize("teacher", "admin"), getAllAttendance);
 
-router.get("/", protect, authorize("admin"), getAttendanceById );
-
+router.get("/:id", protect, authorize("admin"), getAttendanceById); 
 
 router.get("/student/:studentId", protect, authorize("parent"), getStudentAttendance);
 

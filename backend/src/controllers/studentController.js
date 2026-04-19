@@ -20,9 +20,9 @@ exports.createStudent = async (req, res) => {
       $expr: { $lt: ["$currentStudents", "$capacity"] }
     }).session(session);
 
-    if (!availableClassroom) {
-      throw new Error(`عفواً، لا توجد فصول متاحة حالياً في (${grade}). يرجى إنشاء فصل جديد أولاً.`);
-    }
+if (!availableClassroom) {
+      throw new Error("عفواً، لا توجد فصول متاحة حالياً في هذه المرحلة الدراسية. يرجى إنشاء فصل جديد أولاً.");
+    }  
 
     if (!parentNationalId) {
       throw new Error("الرقم القومي لولي الأمر مطلوب للتحقق من هويته");
@@ -193,8 +193,10 @@ exports.getStudents = async (req, res) => {
         return res.status(400).json({ message: "برجاء تحديد الفصل أولاً لعرض قائمة الطلاب." });
       }
       
-      students = await Student.find({ classroom: classroomId })
-        .select("firstName lastName gender active"); 
+students = await Student.find(filter)
+        .populate("parent", "firstName lastName")
+        .populate("grade", "name academicYear") 
+        .populate("classroom", "name");
     }
 
     res.status(200).json({
@@ -215,8 +217,10 @@ exports.getStudent = async (req, res) => {
       return res.status(400).json({ message: "Invalid ID" });
     }
 
-    const student = await Student.findById(req.params.id)
-      .populate("parent", "firstName lastName");
+const student = await Student.findById(req.params.id)
+      .populate("parent", "firstName lastName")
+      .populate("grade", "name academicYear") 
+      .populate("classroom", "name"); 
 
     if (!student) {
       return res.status(404).json({ message: "Student not found" });
@@ -259,7 +263,9 @@ exports.getStudentsByParent = async (req, res) => {
       return res.status(403).json({ message: "Access denied" });
     }
 
-    const students = await Student.find({ parent: parentId });
+const students = await Student.find({ parent: parentId })
+      .populate("grade", "name academicYear") 
+      .populate("classroom", "name"); 
 
     res.status(200).json({
       success: true,

@@ -3,7 +3,9 @@ const router = express.Router();
 const resultController = require("../controllers/resultController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-router.post("/add", protect, authorize("teacher"), resultController.addGrade);
+router.post("/single", protect, authorize("teacher", "admin"), addGrade);
+
+router.post("/add", protect, authorize("teacher"), resultController.addBulkGrades);
 
 router.put("/update/:id", protect, authorize("admin"), resultController.updateGrade);
 

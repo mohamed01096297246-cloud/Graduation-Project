@@ -21,10 +21,12 @@ exports.getReportCard = async (req, res) => {
   try {
     const { studentId, examId } = req.params;
 
-    const student = await Student.findById(studentId).populate("parent");
+const student = await Student.findById(studentId)
+      .populate("parent", "firstName lastName")
+      .populate("grade", "name academicYear") 
+      .populate("classroom", "name");         
+
     const grades = await Result.find({ student: studentId, exam: examId })
-      .populate("subject", "name")
-      .populate("exam", "title academicYear");
 
     if (grades.length === 0) return res.status(404).json({ message: "لم يتم رصد درجات بعد" });
 
@@ -52,6 +54,40 @@ exports.getReportCard = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.addBulkGrades = async (req, res) => {
+  try {
+    const { examId, subjectId, gradesList } = req.body; 
+  
+
+    if (!gradesList || gradesList.length === 0) {
+      return res.status(400).json({ message: "يجب إرسال قائمة الدرجات" });
+    }
+
+    const bulkOps = gradesList.map((record) => ({
+      updateOne: {
+        filter: { student: record.studentId, exam: examId, subject: subjectId },
+        update: { 
+          $set: { 
+            grade: record.grade, 
+            teacher: req.user.id 
+          } 
+        },
+        upsert: true
+      }
+    }));
+
+    await Result.bulkWrite(bulkOps);
+
+    res.status(200).json({ 
+      success: true, 
+      message: `تم رصد الدرجات لعدد (${gradesList.length}) طالب بنجاح دفعة واحدة.` 
+    });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
 exports.updateGrade = async (req, res) => {
   try {
     const { id } = req.params; 
@@ -68,7 +104,17 @@ exports.updateGrade = async (req, res) => {
         updatedBy: req.user.id 
       },
       { new: true, runValidators: true }
-    ).populate("student subject exam");
+    )
+    .populate({
+      path: "student",
+      select: "firstName lastName",
+      populate: [
+        { path: "grade", select: "name academicYear" },
+        { path: "classroom", select: "name" }
+      ]
+    })
+    .populate("subject", "name")
+    .populate("exam", "title academicYear");
 
     if (!updatedResult) {
       return res.status(404).json({ message: "سجل الدرجة غير موجود" });
@@ -76,7 +122,7 @@ exports.updateGrade = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: "تم تعديل الدرجة بنماح بواسطة الإدارة",
+      message: "تم تعديل الدرجة بنجاح بواسطة الإدارة",
       data: updatedResult
     });
   } catch (err) {

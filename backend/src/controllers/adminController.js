@@ -41,6 +41,7 @@ exports.getAdminDashboard = async (req, res) => {
     const attendanceToday = await Attendance.find({ date: { $gte: today } });
     const present = attendanceToday.filter(a => a.status === "present").length;
     const absent = attendanceToday.filter(a => a.status === "absent").length;
+  
 
     res.json({
       stats: { totalStudents, totalTeachers, present, absent },
@@ -108,8 +109,11 @@ exports.getAllUsers = async (req, res) => {
   try {
     const query = req.query.role ? { role: req.query.role } : {};
     
-    const users = await User.find(query).select("-password").sort({ createdAt: -1 });
-    
+  const users = await User.find(query)
+  .populate("grade", "name academicYear")
+  .populate("subject", "name")
+  .select("-password")
+  .sort({ createdAt: -1 });
     res.status(200).json({
       success: true,
       count: users.length,
@@ -129,7 +133,10 @@ exports.getUserById = async (req, res) => {
       return res.status(400).json({ message: "ID المستخدم غير صالح" });
     }
 
-    const user = await User.findById(id).select("-password");
+  const user = await User.findById(id)
+  .populate("grade", "name academicYear")
+  .populate("subject", "name")
+  .select("-password");
     
     if (!user) {
       return res.status(404).json({ message: "المستخدم غير موجود" });

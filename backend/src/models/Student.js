@@ -25,16 +25,21 @@ const studentSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
-
-    gender: {
+gender: {
       type: String,
       enum: ["male", "female"],
       required: true,
     },
 
     grade: {
-      type: String,
-      required: true,
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Grade",
+      required: true 
+    },
+
+    classroom: {  
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Classroom"
     },
 
 parent: {

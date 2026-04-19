@@ -14,9 +14,13 @@ exports.createSchedule = async (req, res) => {
     if (!classroomData) return res.status(404).json({ message: "الفصل غير موجود" });
 
   
-    if (!teacherData.teachingGrades.includes(classroomData.grade)) {
+    const isAuthorized = teacherData.teachingGrades.some(
+      (gId) => gId.toString() === classroomData.grade.toString()
+    );
+
+    if (!isAuthorized) {
       return res.status(400).json({ 
-        message: `تعارض إداري: هذا المعلم غير مصرح له بتدريس المستوى الدراسي (${classroomData.grade}) الخاص بهذا الفصل.` 
+        message: "تعارض إداري: هذا المعلم غير مصرح له بتدريس المستوى الدراسي الخاص بهذا الفصل." 
       });
     }
     const [newStartH, newStartM] = startTime.split(":").map(Number);
@@ -115,11 +119,17 @@ exports.updateSchedule = async (req, res) => {
       }
     }
 
-    const updatedSchedule = await Schedule.findByIdAndUpdate(
+const updatedSchedule = await Schedule.findByIdAndUpdate(
       scheduleId,
       req.body,
       { new: true, runValidators: true }
-    ).populate("teacher classroom subject", "firstName lastName name");
+    ).populate("teacher", "firstName lastName")
+     .populate("subject", "name")
+     .populate({
+       path: "classroom",
+       select: "name grade",
+       populate: { path: "grade", select: "name academicYear" }
+     });
 
     res.json({
       success: true,
@@ -142,7 +152,11 @@ exports.getCurrentClass = async (req, res) => {
     const schedules = await Schedule.find({
       teacher: req.user.id, 
       day
-    }).populate("classroom", "name grade"); 
+    }).populate({
+      path: "classroom",
+      select: "name grade",
+      populate: { path: "grade", select: "name academicYear" } 
+    });
 
     const currentClass = schedules.find((sch) => {
       const [sh, sm] = sch.startTime.split(":").map(Number);
@@ -171,11 +185,15 @@ exports.getAllSchedules = async (req, res) => {
       filter = { teacher: req.user.id };
     }
 
-    const data = await Schedule.find(filter)
+const data = await Schedule.find(filter)
       .populate("teacher", "firstName lastName") 
       .populate("subject", "name")
-      .populate("classroom", "name grade")
-      .sort({ startTime: 1 }); 
+      .populate({
+        path: "classroom",
+        select: "name grade",
+        populate: { path: "grade", select: "name academicYear" } 
+      })
+      .sort({ startTime: 1 });
 
     res.json(data);
   } catch (err) {
@@ -185,8 +203,12 @@ exports.getAllSchedules = async (req, res) => {
 
 exports.getTeacherSchedule = async (req, res) => {
   try {
-    const data = await Schedule.find({ teacher: req.params.id })
-      .populate("classroom", "name grade")
+const data = await Schedule.find({ teacher: req.params.id })
+      .populate({
+        path: "classroom",
+        select: "name grade",
+        populate: { path: "grade", select: "name academicYear" }
+      })
       .populate("subject", "name")
       .sort({ startTime: 1 });
     res.json(data);

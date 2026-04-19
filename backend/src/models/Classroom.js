@@ -8,10 +8,10 @@ const classroomSchema = new mongoose.Schema(
       trim: true,
     },
 
-    grade: {
-      type: String,
-      required: [true, "الصف الدراسي مطلوب"],
-      trim: true,
+grade: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Grade",
+      required:[true, "المستوي الدراسي مطلوب"]
     },
     
     capacity: { type: Number, default: 30 },

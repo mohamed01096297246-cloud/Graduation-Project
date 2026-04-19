@@ -27,14 +27,10 @@ const getActiveClass = async (teacherId, classroomId) => {
   });
 };
 
-exports.createAttendance = async (req, res) => {
+exports.recordBulkAttendance = async (req, res) => {
   try {
-    const { student, status } = req.body;
-
-    const studentData = await Student.findById(student).populate("parent");
-    if (!studentData) return res.status(404).json({ message: "الطالب غير موجود" });
-
-    const activeClass = await getActiveClass(req.user.id, studentData.classroom);
+    const { classroomId, records } = req.body; 
+    const activeClass = await getActiveClass(req.user.id, classroomId);
 
     if (!activeClass) {
       return res.status(403).json({ message: "انتهى وقت الحصة أو لم يبدأ بعد، لا يمكنك تسجيل الحضور الآن." });
@@ -43,25 +39,53 @@ exports.createAttendance = async (req, res) => {
     const normalizedDate = new Date();
     normalizedDate.setHours(0, 0, 0, 0);
 
-    const attendance = await Attendance.create({
-      student,
-      date: normalizedDate,
-      status,
-      recordedBy: req.user.id,
-      schedule: activeClass._id 
-    });
 
-    if (status === "absent" && studentData.parent && studentData.parent.email) {
-      await sendAlertEmail(
-  studentData.parent.email,
-  "تنبيه غياب طالب",
-  `نحيطكم علماً بغياب الطالب: ${studentData.firstName} عن حصة اليوم.`
-);
+    const bulkOps = records.map((record) => ({
+      updateOne: {
+        filter: { 
+          student: record.student, 
+          schedule: activeClass._id, 
+          date: normalizedDate 
+        },
+        update: { 
+          $set: { 
+            status: record.status, 
+            recordedBy: req.user.id 
+          } 
+        },
+        upsert: true 
+      }
+    }));
+
+    await Attendance.bulkWrite(bulkOps);
+
+    const absents = records.filter(r => r.status === "absent");
+    
+    if (absents.length > 0) {
+      const absentIds = absents.map(a => a.student);
+      const studentsToNotify = await Student.find({ _id: { $in: absentIds } }).populate("parent");
+      
+      studentsToNotify.forEach(async (studentData) => {
+        if (studentData.parent && studentData.parent.email) {
+          try {
+            await sendCredentialsEmail( 
+              studentData.parent.email,
+              "تنبيه غياب طالب",
+              `نحيطكم علماً بغياب الطالب: ${studentData.firstName} عن حصة اليوم.`
+            );
+          } catch (e) {
+            console.log("خطأ في إرسال إيميل الغياب:", e.message);
+          }
+        }
+      });
     }
 
-    res.status(201).json({ success: true, attendance });
+    res.status(201).json({ 
+      success: true, 
+      message: `تم تسجيل كشف الغياب لعدد (${records.length}) طالب بنجاح.` 
+    });
+
   } catch (err) {
-    if (err.code === 11000) return res.status(400).json({ message: "تم تسجيل الحضور لهذا الطالب اليوم بالفعل" });
     res.status(500).json({ message: err.message });
   }
 };
@@ -110,7 +134,11 @@ exports.getAllAttendance = async (req, res) => {
       })
       .populate({
         path: "schedule",
-        populate: { path: "classroom", select: "name grade" } 
+        populate: { 
+          path: "classroom", 
+          select: "name grade",
+          populate: { path: "grade", select: "name academicYear" } 
+        }
       })
       .sort({ createdAt: -1 });
 
@@ -128,11 +156,15 @@ exports.getAttendanceById = async (req, res) => {
   try {
     const attendance = await Attendance.findById(req.params.id)
       .populate("student", "firstName lastName")
-      .populate({
+     .populate({
         path: "schedule",
         populate: [
           { path: "subject", select: "name" },
-          { path: "classroom", select: "name grade" }
+          { 
+            path: "classroom", 
+            select: "name grade",
+            populate: { path: "grade", select: "name academicYear" } 
+          }
         ]
       });
 

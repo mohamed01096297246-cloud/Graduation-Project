@@ -13,9 +13,9 @@ const examSchema = new mongoose.Schema(
       trim: true
     },
     grade: {
-      type: String,
-      required: [true, "المستوى الدراسي مطلوب (مثال: الصف الأول)"],
-      trim: true
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Grade",
+      required: [true, "المستوى الدراسي مطلوب)"]
     },
     
     timetable: [

@@ -3,7 +3,7 @@ const router = express.Router();
 const behaviorController = require("../controllers/behaviorController");
 const { protect, authorize } = require("../middleware/authMiddleware");
 
-router.post("/", protect, authorize("teacher"), behaviorController.createBehavior);
+router.post("/", protect, authorize("teacher"), behaviorController.recordBulkBehavior);
 
 router.get("/", protect, authorize("teacher", "admin"), behaviorController.getAllBehavior);
 

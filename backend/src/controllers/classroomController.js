@@ -41,11 +41,13 @@ exports.createClassroom = async (req, res) => {
 
 exports.getAllClassrooms = async (req, res) => {
   try {
-    const data = await Classroom.find().sort({
-      academicYear: -1,
-      grade: 1,
-      name: 1,
-    });
+const data = await Classroom.find()
+      .populate("grade", "name academicYear")
+      .sort({
+        academicYear: -1,
+        grade: 1,
+        name: 1,
+      });
     res.json(data);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -54,7 +56,8 @@ exports.getAllClassrooms = async (req, res) => {
 
 exports.getClassroom = async (req, res) => {
   try {
-    const classroom = await Classroom.findById(req.params.id);
+const classroom = await Classroom.findById(req.params.id)
+      .populate("grade", "name academicYear"); 
 
     if (!classroom) {
       return res.status(404).json({
@@ -103,11 +106,11 @@ exports.updateClassroom = async (req, res) => {
       });
     }
 
-    const updatedClassroom = await Classroom.findByIdAndUpdate(
+const updatedClassroom = await Classroom.findByIdAndUpdate(
       req.params.id,
       { name, grade, academicYear, capacity },
       { new: true, runValidators: true }
-    );
+    ).populate("grade", "name academicYear"); 
 
     res.json({
       message: "تم تحديث بيانات الفصل بنجاح",

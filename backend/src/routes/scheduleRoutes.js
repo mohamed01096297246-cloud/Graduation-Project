@@ -11,8 +11,11 @@ router.get("/teacher/:id", protect, authorize("admin", "teacher"), scheduleContr
 
 router.get("/class/:classroom", protect, authorize("admin", "teacher"), scheduleController.getClassSchedule);
 
+router.get("/current", protect, authorize("teacher"), scheduleController.getCurrentClass);
+
 router.delete("/:id", protect, authorize("admin"), scheduleController.deleteSchedule);
 
-router.get("/current", protect, authorize("teacher"), scheduleController.getCurrentClass);
+router.delete("/:id", protect, authorize("admin"), scheduleController.updateSchedule);
+
 
 module.exports = router;

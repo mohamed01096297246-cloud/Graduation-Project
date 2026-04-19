@@ -24,7 +24,8 @@ exports.createExamSchedule = async (req, res) => {
 
 exports.getAllExams = async (req, res) => {
   try {
-    const exams = await Exam.find()
+const exams = await Exam.find()
+      .populate("grade", "name academicYear") 
       .populate("timetable.subject", "name") 
       .sort({ createdAt: -1 });
 
@@ -45,7 +46,8 @@ exports.getStudentExams = async (req, res) => {
       return res.status(403).json({ message: "غير مصرح لك" });
     }
 
-    const exams = await Exam.find({ grade: student.grade })
+const exams = await Exam.find({ grade: student.grade })
+      .populate("grade", "name academicYear") 
       .populate("timetable.subject", "name")
       .sort({ createdAt: -1 });
 
@@ -58,11 +60,12 @@ exports.updateExamSchedule = async (req, res) => {
   try {
     const examId = req.params.id;
 
-    const updatedExam = await Exam.findByIdAndUpdate(
+const updatedExam = await Exam.findByIdAndUpdate(
       examId,
       req.body,
       { new: true, runValidators: true }
-    ).populate("timetable.subject", "name");
+    ).populate("grade", "name academicYear") 
+     .populate("timetable.subject", "name");
 
     if (!updatedExam) {
       return res.status(404).json({ message: "عفواً، جدول الامتحانات غير موجود" });

@@ -1,5 +1,6 @@
 const User = require("../models/User");
 const Subject = require("../models/Subject"); 
+const Grade=require("../models/Grade");
 const Schedule = require("../models/Schedule");
 const Attendance = require("../models/Attendance");
 const Homework = require("../models/Homework");
@@ -25,11 +26,11 @@ exports.createTeacher = async (req, res) => {
     const username = generateUsername(`${firstName} ${lastName}`);
     const password = generatePassword(); 
 
-    const teacher = await User.create({
+const teacher = await User.create({
       firstName, lastName, phoneNumber, nationalId, email,
       role: "teacher",
       subject: subjectId, 
-      teachingGrades,    
+      teachingGrades, 
       username, password,
       active: true
     });
@@ -52,9 +53,10 @@ exports.createTeacher = async (req, res) => {
 
 exports.getAllTeachers = async (req, res) => {
   try {
-    const teachers = await User.find({ role: "teacher" })
-      .populate("subject", "name code") 
-      .select("firstName lastName phoneNumber email teachingGrades subject active"); 
+const teachers = await User.find({ role: "teacher" })
+      .populate("subject", "name code")
+      .populate("teachingGrades", "name academicYear") 
+      .select("firstName lastName phoneNumber teachingGrades subject");
 
     res.status(200).json({
       success: true,
@@ -84,12 +86,16 @@ exports.getTeacherDashboard = async (req, res) => {
     const day = days[now.getDay()];
     const currentTime = now.getHours() * 60 + now.getMinutes();
 
-    const todayClasses = await Schedule.find({
+const todayClasses = await Schedule.find({
       teacher: teacherId,
       day
     })
-    .populate("classroom", "name grade")
-    .sort({ startTime: 1 }); 
+    .populate({
+      path: "classroom",
+      select: "name grade",
+      populate: { path: "grade", select: "name academicYear" }
+    })
+    .sort({ startTime: 1 });
     const currentClass = todayClasses.find((cls) => {
       const start = timeToMinutes(cls.startTime);
       const end = timeToMinutes(cls.endTime);
@@ -115,10 +121,14 @@ exports.getTeacherDashboard = async (req, res) => {
       }));
 
 
-    const homeworks = await Homework.find({
+const homeworks = await Homework.find({
       teacher: teacherId
     })
-    .populate("classroom", "name grade")
+    .populate({
+      path: "classroom",
+      select: "name grade",
+      populate: { path: "grade", select: "name academicYear" } 
+    })
     .sort({ createdAt: -1 })
     .limit(5);
 
