@@ -17,8 +17,6 @@ const { name, code, grade } = req.body;
       return res.status(400).json({ message: `هذه المادة مسجلة بالفعل لهذه المرحلة` });
     }
 
-    const subject = await Subject.create({ name, code, grade });
-
     const subject = await Subject.create({ name, code, grade:gradeID });
     res.status(201).json({ message: "تم إضافة المادة بنجاح", subject });
   } catch (err) {
