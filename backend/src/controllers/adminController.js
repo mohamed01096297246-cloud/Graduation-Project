@@ -108,22 +108,24 @@ exports.updateUser = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
   try {
     const query = req.query.role ? { role: req.query.role } : {};
-    
-  const users = await User.find(query)
-  .populate("grade", "name academicYear")
-  .populate("subject", "name")
-  .select("-password")
-  .sort({ createdAt: -1 });
+
+    const users = await User.find(query)
+      .populate("subject", "name")
+      .populate("teachingGrades", "name academicYear")
+      .select("-password")
+      .sort({ createdAt: -1 });
+
     res.status(200).json({
       success: true,
       count: users.length,
-      data: users
+      data: users,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res
+      .status(500)
+      .json({ error: "حدث خطأ أثناء جلب البيانات: " + err.message });
   }
 };
-
 
 exports.getUserById = async (req, res) => {
   try {
@@ -133,18 +135,18 @@ exports.getUserById = async (req, res) => {
       return res.status(400).json({ message: "ID المستخدم غير صالح" });
     }
 
-  const user = await User.findById(id)
-  .populate("grade", "name academicYear")
-  .populate("subject", "name")
-  .select("-password");
-    
+    const user = await User.findById(id)
+      .populate("subject", "name")
+      .populate("teachingGrades", "name academicYear")
+      .select("-password");
+
     if (!user) {
       return res.status(404).json({ message: "المستخدم غير موجود" });
     }
 
     res.status(200).json({
       success: true,
-      data: user
+      data: user,
     });
   } catch (err) {
     res.status(500).json({ error: err.message });

@@ -80,13 +80,12 @@ exports.getTeacherDashboard = async (req, res) => {
     }
 
     const teacherId = req.user.id;
-
-    const days = ["sun", "mon", "tue", "wed", "thu",];
+    const days = ["sun", "mon", "tue", "wed", "thu"];
     const now = new Date();
     const day = days[now.getDay()];
     const currentTime = now.getHours() * 60 + now.getMinutes();
 
-const todayClasses = await Schedule.find({
+    const todayClasses = await Schedule.find({
       teacher: teacherId,
       day
     })
@@ -95,12 +94,20 @@ const todayClasses = await Schedule.find({
       select: "name grade",
       populate: { path: "grade", select: "name academicYear" }
     })
-    .sort({ startTime: 1 });
+    .sort({ startTime: 1 }); 
+
     const currentClass = todayClasses.find((cls) => {
       const start = timeToMinutes(cls.startTime);
       const end = timeToMinutes(cls.endTime);
       return currentTime >= start && currentTime <= end;
     });
+
+    let currentClassStudents = [];
+    if (currentClass) {
+      const Student = require("../models/Student"); 
+      currentClassStudents = await Student.find({ classroom: currentClass.classroom._id })
+        .select("firstName lastName gender active");
+    }
 
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
@@ -120,10 +127,7 @@ const todayClasses = await Schedule.find({
         date: a.date
       }));
 
-
-const homeworks = await Homework.find({
-      teacher: teacherId
-    })
+    const homeworks = await Homework.find({ teacher: teacherId })
     .populate({
       path: "classroom",
       select: "name grade",
@@ -135,12 +139,91 @@ const homeworks = await Homework.find({
     res.json({
       summary: {
         totalClassesToday: todayClasses.length,
-        totalAbsentsRecorded: absentStudents.length
+        totalAbsentsRecorded: absentStudents.length,
+        serverTime: new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'})
       },
-      todayClasses,
-      currentClass: currentClass || null,
+      todayClasses,           
+      currentClass,          
+      currentClassStudents,  
       absentStudents,
       recentHomeworks: homeworks
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.updateTeacher = async (req, res) => {
+  try {
+    const teacherId = req.params.id;
+    const { firstName, lastName, phoneNumber, nationalId, email, subjectId, teachingGrades, active } = req.body;
+
+    const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
+    if (!teacher) {
+      return res.status(404).json({ message: "عفواً، المعلم غير موجود" });
+    }
+
+    const updateData = { firstName, lastName, phoneNumber, nationalId, email };
+    
+    if (active !== undefined) updateData.active = active;
+
+    if (subjectId) {
+      const Subject = require("../models/Subject");
+      const existingSubject = await Subject.findById(subjectId);
+      if (!existingSubject) {
+        return res.status(400).json({ message: "المادة الدراسية المختارة غير موجودة" });
+      }
+      updateData.subject = subjectId;
+    }
+
+    if (teachingGrades) {
+      updateData.teachingGrades = teachingGrades;
+    }
+
+    const updatedTeacher = await User.findByIdAndUpdate(
+      teacherId,
+      updateData,
+      { new: true, runValidators: true }
+    )
+    .populate("subject", "name code")
+    .populate("teachingGrades", "name academicYear")
+    .select("-password");
+
+    res.status(200).json({
+      success: true,
+      message: "تم تحديث بيانات المعلم بنجاح",
+      data: updatedTeacher
+    });
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.deleteTeacher = async (req, res) => {
+  try {
+    const teacherId = req.params.id;
+
+    const teacher = await User.findOne({ _id: teacherId, role: "teacher" });
+    if (!teacher) {
+      return res.status(404).json({ message: "عفواً، المعلم غير موجود" });
+    }
+
+    const Schedule = require("../models/Schedule");
+    const schedulesCount = await Schedule.countDocuments({ teacher: teacherId });
+    
+    if (schedulesCount > 0) {
+      return res.status(400).json({ 
+        message: "لا يمكن حذف هذا المعلم لارتباطه بجدول حصص دراسية. يرجى حذف حصصه أولاً، أو القيام بإيقاف حسابه مؤقتاً (Deactivate) بدلاً من الحذف النهائي." 
+      });
+    }
+
+    await teacher.deleteOne();
+
+    res.status(200).json({
+      success: true,
+      message: "تم حذف حساب المعلم من النظام بنجاح"
     });
 
   } catch (err) {

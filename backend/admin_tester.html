@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EduLink | لوحة اختبار الأدمن (V6 - Smart Logic)</title>
+    <title>EduLink | لوحة اختبار الأدمن (V7 - Dynamic Grades)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
@@ -28,6 +28,10 @@
         pre { direction: ltr; background-color: #000; padding: 0.75rem; border-radius: 0.5rem; color: #4ade80; font-size: 0.75rem; margin-top: 0.75rem; border: 1px solid #334155; max-height: 250px; overflow-y: auto; }
         .status-badge { padding: 0.25rem 0.75rem; border-radius: 0.25rem; font-size: 0.75rem; font-weight: bold; }
         .section-title { font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem; border-bottom: 1px solid #334155; padding-bottom: 0.25rem; }
+        
+        /* تصميم خاص للـ select */
+        select.input-field { appearance: none; background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2364748b' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='m6 8 4 4 4-4'/%3E%3C/svg%3E"); background-position: left 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-left: 2.5rem; }
+        select[multiple] { background-image: none; padding: 0.6rem; height: auto; }
     </style>
 </head>
 <body class="p-4 md:p-8">
@@ -36,7 +40,7 @@
         <header class="flex justify-between items-center mb-8 border-b border-slate-700 pb-6">
             <div>
                 <h1 class="text-3xl font-bold text-blue-400">EduLink <span class="text-white">Admin Tester</span></h1>
-                <p class="text-slate-400 text-sm mt-1">اختبار المعمارية الذكية (التوزيع التلقائي ومنع التداخل)</p>
+                <p class="text-slate-400 text-sm mt-1">اختبار المعمارية الذكية (المراحل الديناميكية والتوزيع التلقائي)</p>
             </div>
             <div id="authStatus">
                 <span class="status-badge bg-red-900 text-red-200">غير متصل</span>
@@ -56,17 +60,22 @@
                 <h2 class="text-lg font-bold mb-3 text-emerald-400">2. إضافة مادة</h2>
                 <input id="sub_name" type="text" placeholder="اسم المادة (مثال: لغة عربية)" class="input-field">
                 <input id="sub_code" type="text" placeholder="كود المادة (مثال: ARB-101)" class="input-field">
+                <select id="sub_grade" class="input-field dynamic-grades">
+                    <option value="">-- اختر المرحلة الدراسية --</option>
+                </select>
                 <button onclick="testCreateSubject()" class="btn btn-green w-full">حفظ المادة</button>
                 <pre id="res_subject">...</pre>
             </div>
 
             <div class="card" style="border-top: 4px solid #059669;">
-                <h2 class="text-lg font-bold mb-3 text-emerald-400">3. إضافة فصل (محدث بالـ Capacity)</h2>
+                <h2 class="text-lg font-bold mb-3 text-emerald-400">3. إضافة فصل</h2>
                 <input id="class_name" type="text" placeholder="اسم الفصل (مثال: 1/أ)" class="input-field">
-                <input id="class_grade" type="text" placeholder="المستوى (مثال: الصف الأول)" class="input-field">
+                <select id="class_grade" class="input-field dynamic-grades">
+                    <option value="">-- اختر المرحلة الدراسية --</option>
+                </select>
                 <div class="grid grid-cols-2 gap-2">
                     <input id="class_year" type="text" placeholder="السنة (2025/2026)" class="input-field" value="2025/2026">
-                    <input id="class_capacity" type="number" placeholder="السعة (مثال: 2)" class="input-field" value="2" title="خليها 2 عشان نختبر التوزيع التلقائي بسرعة">
+                    <input id="class_capacity" type="number" placeholder="السعة (مثال: 2)" class="input-field" value="2">
                 </div>
                 <button onclick="testCreateClass()" class="btn btn-green w-full mt-2">حفظ الفصل</button>
                 <p class="text-xs text-slate-400 mt-2 text-center">* السعة الافتراضية هنا 2 لتسهيل اختبار التوزيع.</p>
@@ -89,22 +98,29 @@
                 </div>
                 <input id="t_email" type="email" placeholder="البريد الإلكتروني" class="input-field">
                 
-                <div class="section-title mt-2">التخصص:</div>
+                <div class="section-title mt-2">التخصص والمراحل:</div>
                 <input id="t_subject_id" type="text" placeholder="ID المادة (من خطوة 2)" class="input-field" style="border-color: #10b981;">
-<input id="t_grade" type="text" placeholder="المستويات مفصولة بفاصلة (مثال: LEVEL1, LEVEL2)" class="input-field" style="border-color: #10b981;">                
+                
+                <p class="text-xs text-slate-400 mb-1">اختر المراحل التي يدرسها (يمكن اختيار أكثر من مرحلة بـ Ctrl):</p>
+                <select id="t_grades" multiple class="input-field dynamic-grades" style="border-color: #10b981; height: 80px;">
+                </select>
+                
                 <button onclick="testCreateTeacher()" class="btn btn-purple w-full mt-2">إنشاء حساب المعلم</button>
                 <pre id="res_teacher">...</pre>
             </div>
 
             <div class="card" style="border-top: 4px solid #7c3aed;">
-                <h2 class="text-lg font-bold mb-3 text-purple-400">5. تسجيل طالب (التوزيع التلقائي مفعل 🤖)</h2>
+                <h2 class="text-lg font-bold mb-3 text-purple-400">5. تسجيل طالب (التوزيع التلقائي 🤖)</h2>
                 
                 <div class="section-title">بيانات الطالب (سيتم إلحاقه بفصل آلياً):</div>
                 <div class="grid grid-cols-2 gap-2">
                     <input id="s_fname" type="text" placeholder="اسم الطالب" class="input-field">
                     <input id="s_phone" type="text" placeholder="هاتف الطالب" class="input-field">
                 </div>
-                <input id="s_grade" type="text" placeholder="المستوى الدراسي (مثال: الصف الأول)" class="input-field" style="border-color: #3b82f6;">
+                
+                <select id="s_grade" class="input-field dynamic-grades" style="border-color: #3b82f6;">
+                    <option value="">-- اختر المرحلة الدراسية --</option>
+                </select>
                 
                 <div class="section-title mt-2">بيانات ولي الأمر (مطلوبة للربط):</div>
                 <div class="grid grid-cols-2 gap-2">
@@ -144,7 +160,6 @@
                     </div>
                 </div>
                 <button onclick="testCreateSchedule()" class="btn btn-orange w-full mt-2">إضافة الحصة للجدول</button>
-                <p class="text-xs text-slate-400 mt-2 text-center">* جرب إضافة حصة أخرى متداخلة زمنياً لاختبار الحماية.</p>
                 <pre id="res_schedule">...</pre>
             </div>
 
@@ -153,7 +168,9 @@
                 <input id="exam_title" type="text" placeholder="عنوان الامتحان" class="input-field" value="امتحانات نصف العام">
                 <div class="grid grid-cols-2 gap-2">
                     <input id="exam_year" type="text" placeholder="السنة الدراسية" class="input-field" value="2025/2026">
-                    <input id="exam_grade" type="text" placeholder="المستوى" class="input-field" value="الصف الأول">
+                    <select id="exam_grade" class="input-field dynamic-grades">
+                        <option value="">-- اختر المرحلة --</option>
+                    </select>
                 </div>
                 <div class="section-title mt-2">إضافة مادة للجدول:</div>
                 <input id="exam_subject" type="text" placeholder="ID المادة" class="input-field" style="border-color: #10b981;">
@@ -170,8 +187,9 @@
         <div class="card" style="border-top: 4px solid #3b82f6;">
             <h2 class="text-lg font-bold mb-3 text-blue-400">8. استعراض البيانات (READ)</h2>
             <div class="flex flex-wrap gap-2 mb-3">
+                <button onclick="apiCall('/grades', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">المراحل (Grades)</button>
                 <button onclick="apiCall('/subjects', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">المواد</button>
-                <button onclick="apiCall('/classrooms', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">الفصول (راقب العداد هنا)</button>
+                <button onclick="apiCall('/classrooms', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">الفصول</button>
                 <button onclick="apiCall('/teacher', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">المعلمون</button>
                 <button onclick="apiCall('/students', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">الطلاب</button>
                 <button onclick="apiCall('/schedules', 'GET', null, 'res_getall')" class="btn btn-dark text-xs">الجداول</button>
@@ -190,11 +208,12 @@
             const status = document.getElementById("authStatus");
             if(TOKEN) {
                 status.innerHTML = `<span class="status-badge" style="background-color: #064e3b; color: #34d399;">تم تسجيل الدخول ✓</span>`;
+                fetchGrades(); // 🔥 استدعاء المراحل بمجرد الدخول
             } else {
                 status.innerHTML = `<span class="status-badge" style="background-color: #7f1d1d; color: #fca5a5;">غير متصل</span>`;
             }
         }
-        updateUI();
+        
 
         async function apiCall(endpoint, method, body, resId) {
             const resArea = document.getElementById(resId);
@@ -222,6 +241,32 @@
             }
         }
 
+        // 🔥 دالة سحب المراحل الدراسية وتعبئة القوائم المنسدلة
+        async function fetchGrades() {
+            try {
+                const response = await fetch(`${API_URL}/grades`, {
+                    headers: { 'Authorization': `Bearer ${TOKEN}` }
+                });
+                const data = await response.json();
+                
+                if (data.success && data.data) {
+                    const gradeDropdowns = document.querySelectorAll('.dynamic-grades');
+                    const optionsHTML = data.data.map(g => `<option value="${g._id}">${g.name} (${g.academicYear})</option>`).join('');
+                    
+                    gradeDropdowns.forEach(dropdown => {
+                        // لو مش قائمة المدرس (اللي بتقبل اكتر من اختيار) حط الخيار الفاضي الاول
+                        if(!dropdown.hasAttribute('multiple')){
+                            dropdown.innerHTML = `<option value="">-- اختر المرحلة --</option>` + optionsHTML;
+                        } else {
+                            dropdown.innerHTML = optionsHTML;
+                        }
+                    });
+                }
+            } catch(e) {
+                console.log("خطأ في جلب المراحل: ", e);
+            }
+        }
+
         async function testLogin() {
             const username = document.getElementById("login_user").value;
             const password = document.getElementById("login_pass").value;
@@ -236,22 +281,24 @@
         function testCreateSubject() {
             apiCall("/subjects", "POST", { 
                 name: document.getElementById("sub_name").value, 
-                code: document.getElementById("sub_code").value 
+                code: document.getElementById("sub_code").value,
+                grade: document.getElementById("sub_grade").value // 🔥 نبعت الـ ID
             }, "res_subject");
         }
 
         function testCreateClass() {
             apiCall("/classrooms", "POST", { 
                 name: document.getElementById("class_name").value, 
-                grade: document.getElementById("class_grade").value,
+                grade: document.getElementById("class_grade").value, // 🔥 نبعت الـ ID
                 academicYear: document.getElementById("class_year").value,
-                capacity: parseInt(document.getElementById("class_capacity").value) // 🔥 إرسال السعة
+                capacity: parseInt(document.getElementById("class_capacity").value)
             }, "res_class");
         }
-function testCreateTeacher() {
-            // تحويل النص المكتوب لمصفوفة من المستويات
-            const gradesInput = document.getElementById("t_grade").value;
-            const gradesArray = gradesInput.split(',').map(grade => grade.trim());
+
+        function testCreateTeacher() {
+            // 🔥 تجميع الـ IDs المختارة من القائمة المتعددة
+            const selectElement = document.getElementById("t_grades");
+            const selectedGrades = Array.from(selectElement.selectedOptions).map(option => option.value);
 
             apiCall("/teacher", "POST", { 
                 firstName: document.getElementById("t_fname").value,
@@ -260,19 +307,17 @@ function testCreateTeacher() {
                 phoneNumber: document.getElementById("t_phone").value,
                 email: document.getElementById("t_email").value,
                 subjectId: document.getElementById("t_subject_id").value,
-                teachingGrades: gradesArray // 🔥 هنا بنبعت المصفوفة للباك إند
+                teachingGrades: selectedGrades // 🔥 إرسال مصفوفة الـ IDs
             }, "res_teacher");
         }
 
-        // 🔥 الدالة المحدثة لاختبار التوزيع التلقائي
         function testCreateStudent() {
             let payload = {
                 firstName: document.getElementById("s_fname").value,
-                lastName: document.getElementById("p_lname").value, // باخد اللقب من بيانات الأب
+                lastName: document.getElementById("p_lname").value, 
                 phoneNumber: document.getElementById("s_phone").value,
                 gender: "male",
-                grade: document.getElementById("s_grade").value,
-                // ❌ تم إزالة Classroom ID من هنا تماماً
+                grade: document.getElementById("s_grade").value, // 🔥 نبعت الـ ID
                 parentFirstName: document.getElementById("p_fname").value,
                 parentLastName: document.getElementById("p_lname").value,
                 parentNationalId: document.getElementById("p_nid").value,
@@ -282,7 +327,6 @@ function testCreateTeacher() {
             apiCall("/students", "POST", payload, "res_student");
         }
 
-        // 🔥 الدالة المحدثة لاختبار استنتاج اليوم والتداخل الزمني
         function testCreateSchedule() {
             const dateInput = document.getElementById("sch_date").value;
             if (!dateInput) {
@@ -297,7 +341,7 @@ function testCreateTeacher() {
             apiCall("/schedules", "POST", {
                 teacher: document.getElementById("sch_teacher").value,
                 classroom: document.getElementById("sch_class").value,
-                day: dayName, // 🔥 السيرفر هياخد اليوم المستنتج
+                day: dayName, 
                 startTime: document.getElementById("sch_start").value,
                 endTime: document.getElementById("sch_end").value
             }, "res_schedule");
@@ -307,7 +351,7 @@ function testCreateTeacher() {
             const payload = {
                 title: document.getElementById("exam_title").value,
                 academicYear: document.getElementById("exam_year").value,
-                grade: document.getElementById("exam_grade").value,
+                grade: document.getElementById("exam_grade").value, // 🔥 نبعت الـ ID
                 timetable: [
                     {
                         subject: document.getElementById("exam_subject").value,
@@ -319,6 +363,9 @@ function testCreateTeacher() {
             };
             apiCall("/exams", "POST", payload, "res_exam");
         }
+
+        // تشغيل التهيئة المبدئية عند فتح الصفحة
+        updateUI();
     </script>
 </body>
 </html>

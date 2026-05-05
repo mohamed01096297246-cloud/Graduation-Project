@@ -5,19 +5,27 @@ const Grade=require("../models/Grade");
 
 exports.createSubject = async (req, res) => {
   try {
-const { name, code, grade } = req.body; 
-    
-    const existingCode = await Subject.findOne({ code: code.trim().toUpperCase() });
+    const { name, code, grade } = req.body;
+
+  
+    if (!name || !code || !grade) {
+      return res.status(400).json({ message: "جميع الحقول مطلوبة" });
+    }
+
+    const existingCode = await Subject.findOne({
+      code: code.trim().toUpperCase(),
+    });
     if (existingCode) {
       return res.status(400).json({ message: "كود هذه المادة مسجل مسبقاً" });
     }
 
-    const existingNameInGrade = await Subject.findOne({ name, grade }); 
+    const existingNameInGrade = await Subject.findOne({ name, grade });
     if (existingNameInGrade) {
-      return res.status(400).json({ message: `هذه المادة مسجلة بالفعل لهذه المرحلة` });
+      return res
+        .status(400)
+        .json({ message: `هذه المادة مسجلة بالفعل لهذه المرحلة` });
     }
-
-    const subject = await Subject.create({ name, code, grade:gradeID });
+    const subject = await Subject.create({ name, code, grade: grade });
     res.status(201).json({ message: "تم إضافة المادة بنجاح", subject });
   } catch (err) {
     res.status(400).json({ error: err.message });

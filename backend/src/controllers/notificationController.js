@@ -1,7 +1,6 @@
 const Notification = require("../models/Notification");
 const User = require("../models/User");
-const sendCredentialsEmail = require("../utils/emailService.js");
-
+const { sendCredentialsEmail } = require("../utils/emailService");
 exports.createNotification = async (req, res) => {
   try {
     const { title, message, target, parentId } = req.body;

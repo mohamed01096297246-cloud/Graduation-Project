@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 const { generateUsername, generatePassword } = require("../utils/generateCredentials");
-const sendCredentialsEmail = require("../utils/emailService");
+const { sendCredentialsEmail } = require("../utils/emailService");
 const User = require("../models/User");
 const Student = require("../models/Student");
 const Classroom = require("../models/Classroom"); 
@@ -127,11 +127,30 @@ exports.updateStudent = async (req, res) => {
       await User.findByIdAndUpdate(req.body.parent, { $addToSet: { linkedStudents: student._id } });
     }
 
+    if (req.body.classroom && req.body.classroom !== student.classroom.toString()) {
+      const Classroom = require("../models/Classroom"); 
+      
+      const newClassroom = await Classroom.findById(req.body.classroom);
+      if (!newClassroom) {
+        return res.status(404).json({ message: "الفصل الجديد غير موجود" });
+      }
+
+      if (newClassroom.currentStudents >= newClassroom.capacity) {
+        return res.status(400).json({ message: "عفواً، الفصل الجديد ممتلئ ولا يمكن نقل الطالب إليه" });
+      }
+
+      await Classroom.findByIdAndUpdate(student.classroom, { $inc: { currentStudents: -1 } });
+      
+      await Classroom.findByIdAndUpdate(newClassroom._id, { $inc: { currentStudents: 1 } });
+    }
+
     const updatedStudent = await Student.findByIdAndUpdate(
       studentId,
       req.body,
       { new: true, runValidators: true }
-    ).populate("parent"); 
+    ).populate("parent", "firstName lastName")
+     .populate("classroom", "name")
+     .populate("grade", "name academicYear"); 
 
     res.status(200).json({
       success: true,
