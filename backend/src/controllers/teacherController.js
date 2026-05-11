@@ -7,11 +7,6 @@ const Homework = require("../models/Homework");
 const { sendCredentialsEmail } = require("../utils/emailService");
 const { generateUsername, generatePassword } = require("../utils/generateCredentials");
 
-const timeToMinutes = (time) => {
-  const [h, m] = time.split(":").map(Number);
-  return h * 60 + m;
-};
-
 exports.createTeacher = async (req, res) => {
   try {
   
@@ -83,7 +78,6 @@ exports.getTeacherDashboard = async (req, res) => {
     const days = ["sun", "mon", "tue", "wed", "thu"];
     const now = new Date();
     const day = days[now.getDay()];
-    const currentTime = now.getHours() * 60 + now.getMinutes();
 
     const todayClasses = await Schedule.find({
       teacher: teacherId,
@@ -96,19 +90,19 @@ exports.getTeacherDashboard = async (req, res) => {
     })
     .sort({ startTime: 1 }); 
 
-    const currentClass = todayClasses.find((cls) => {
-      const start = timeToMinutes(cls.startTime);
-      const end = timeToMinutes(cls.endTime);
+    const currentTime = now.getHours() * 60 + now.getMinutes();
+    const currentClassIndicator = todayClasses.find((cls) => {
+
+      const [sh, sm] = cls.startTime.split(":").map(Number);
+      const [eh, em] = cls.endTime.split(":").map(Number);
+      const start = sh * 60 + sm;
+      const end = eh * 60 + em;
       return currentTime >= start && currentTime <= end;
     });
 
-    let currentClassStudents = [];
-    if (currentClass) {
-      const Student = require("../models/Student"); 
-      currentClassStudents = await Student.find({ classroom: currentClass.classroom._id })
-        .select("firstName lastName gender active");
-    }
+    
 
+    // 3. جلب إحصائيات الغياب والواجبات
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     const endOfDay = new Date();
@@ -136,6 +130,7 @@ exports.getTeacherDashboard = async (req, res) => {
     .sort({ createdAt: -1 })
     .limit(5);
 
+    // . هنا ببعتلك البيانات ياعمر 
     res.json({
       summary: {
         totalClassesToday: todayClasses.length,
@@ -143,8 +138,7 @@ exports.getTeacherDashboard = async (req, res) => {
         serverTime: new Date().toLocaleTimeString('ar-EG', {hour: '2-digit', minute:'2-digit'})
       },
       todayClasses,           
-      currentClass,          
-      currentClassStudents,  
+      currentClassIndicator,  
       absentStudents,
       recentHomeworks: homeworks
     });
